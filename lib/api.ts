@@ -27,9 +27,6 @@ export function fmtDate(d?: string | null) {
   });
 }
 
-// A task is "overdue" when its SLA date (or due date as fallback) has passed
-// and the task is not done. This is the single source of truth for SLA logic
-// on the client; the server mirrors it in /api/reports.
 export function isOverdue(task: { status: string; sla_date?: string | null; due_date?: string | null }) {
   const deadline = task.sla_date || task.due_date;
   if (!deadline || task.status === "done") return false;
