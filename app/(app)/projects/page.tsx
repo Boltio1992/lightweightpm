@@ -14,7 +14,11 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [filter, setFilter] = useState("all");
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importSaving, setImportSaving] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -61,6 +65,32 @@ export default function ProjectsPage() {
     }
   }
 
+  async function importCsv(e: React.FormEvent) {
+    e.preventDefault();
+    if (!importFile) {
+      setImportError("Please choose a CSV file.");
+      return;
+    }
+    setImportSaving(true);
+    setImportError(null);
+    try {
+      const form = new FormData();
+      form.append("file", importFile);
+      const result = await api<{ imported: number }>("/api/projects/import", {
+        method: "POST",
+        body: form,
+      });
+      setImportFile(null);
+      setImportOpen(false);
+      window.alert(`${result.imported} project${result.imported === 1 ? "" : "s"} imported.`);
+      await load();
+    } catch (err: any) {
+      setImportError(err.message);
+    } finally {
+      setImportSaving(false);
+    }
+  }
+
   const shown = filter === "all" ? projects : projects.filter((p) => p.status === filter);
 
   return (
@@ -69,9 +99,14 @@ export default function ProjectsPage() {
         title="Projects"
         subtitle="Everything on hand, in one place."
         actions={
-          <button onClick={() => setOpen(true)} className="btn-primary">
-            New project
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => { setImportError(null); setImportOpen(true); }} className="btn">
+              Import CSV
+            </button>
+            <button onClick={() => setOpen(true)} className="btn-primary">
+              New project
+            </button>
+          </div>
         }
       />
 
@@ -117,9 +152,7 @@ export default function ProjectsPage() {
                   <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted">
-                  <span>
-                    {p.stats.done}/{p.stats.total} done ({pct}%)
-                  </span>
+                  <span>{p.stats.done}/{p.stats.total} done ({pct}%)</span>
                   {p.stats.overdue > 0 ? (
                     <span className="font-medium text-danger">{p.stats.overdue} overdue</span>
                   ) : (
@@ -132,54 +165,60 @@ export default function ProjectsPage() {
         </div>
       </div>
 
+      <Modal open={importOpen} onClose={() => setImportOpen(false)} title="Import projects from CSV">
+        <form onSubmit={importCsv} className="space-y-3">
+          <p className="text-sm text-muted">
+            Upload up to 500 projects. The required column is <strong>name</strong>. Optional columns are
+            description, status, start_date, and end_date.
+          </p>
+          <p className="rounded-md bg-subtle p-3 font-mono text-xs text-muted">
+            name,description,status,start_date,end_date<br />
+            Website redesign,Refresh website,active,2026-10-01,2026-12-31
+          </p>
+          <div>
+            <label className="label">CSV file</label>
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              className="input"
+              onChange={(e) => setImportFile(e.target.files?.[0] ?? null)}
+              required
+            />
+          </div>
+          {importError && <p className="text-sm text-danger">{importError}</p>}
+          <div className="flex justify-end gap-2 pt-1">
+            <button type="button" onClick={() => setImportOpen(false)} className="btn">Cancel</button>
+            <button className="btn-primary" disabled={importSaving}>
+              {importSaving ? "Importing…" : "Import projects"}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
       <Modal open={open} onClose={() => setOpen(false)} title="New project">
         <form onSubmit={create} className="space-y-3">
           <div>
             <label className="label">Project name</label>
-            <input
-              className="input"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              autoFocus
-              required
-            />
+            <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoFocus required />
           </div>
           <div>
             <label className="label">Description</label>
-            <textarea
-              className="input min-h-[72px] resize-y"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
+            <textarea className="input min-h-[72px] resize-y" value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label">Start date</label>
-              <input
-                type="date"
-                className="input"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
+              <input type="date" className="input" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </div>
             <div>
               <label className="label">End date</label>
-              <input
-                type="date"
-                className="input"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
+              <input type="date" className="input" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </div>
           </div>
           {error && <p className="text-sm text-danger">{error}</p>}
           <div className="flex justify-end gap-2 pt-1">
-            <button type="button" onClick={() => setOpen(false)} className="btn">
-              Cancel
-            </button>
-            <button className="btn-primary" disabled={saving}>
-              {saving ? "Creating…" : "Create project"}
-            </button>
+            <button type="button" onClick={() => setOpen(false)} className="btn">Cancel</button>
+            <button className="btn-primary" disabled={saving}>{saving ? "Creating…" : "Create project"}</button>
           </div>
         </form>
       </Modal>
