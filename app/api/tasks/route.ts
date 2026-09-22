@@ -3,10 +3,10 @@ import { requireUser } from "@/lib/requireUser";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 
 const MODERN_TASK_SELECT =
-  "id, project_id, parent_task_id, title, description, status, priority, assignee_id, start_date, due_date, sla_date, duration_days, percent_complete, sort_order, created_by, created_at, updated_at, assignee:users!tasks_assignee_id_fkey(id, full_name, email), project:projects!tasks_project_id_fkey(id, name)";
+  "id, project_id, parent_task_id, title, description, status, priority, assignee_id, start_date, due_date, sla_date, duration_days, percent_complete, sort_order, created_by, created_at, updated_at, assignee:users!tasks_assignee_id_fkey(id, username, name, title, role, created_at), project:projects!tasks_project_id_fkey(id, name)";
 
 const LEGACY_TASK_SELECT =
-  "id, project_id, parent_task_id, title, description, status, priority, assignee_id, start_date, due_date, sla_date, sort_order, created_by, created_at, updated_at, assignee:users!tasks_assignee_id_fkey(id, full_name, email), project:projects!tasks_project_id_fkey(id, name)";
+  "id, project_id, parent_task_id, title, description, status, priority, assignee_id, start_date, due_date, sla_date, sort_order, created_by, created_at, updated_at, assignee:users!tasks_assignee_id_fkey(id, username, name, title, role, created_at), project:projects!tasks_project_id_fkey(id, name)";
 
 function missingColumn(error: { message?: string } | null) {
   return /column .*does not exist|schema cache/i.test(error?.message ?? "");
