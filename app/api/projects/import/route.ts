@@ -6,6 +6,9 @@ import { supabaseAdmin } from "@/lib/supabaseServer";
 export const runtime = "nodejs";
 
 function text(value: unknown) { return value == null ? "" : String(value).trim(); }
+function normalizeHeader(value: unknown) {
+  return text(value).replace(/^\uFEFF/, "").replace(/\s+/g, " ").toLowerCase();
+}
 function dateValue(value: unknown) {
   if (value == null || value === "") return null;
   if (value instanceof Date) return value.toISOString().slice(0, 10);
@@ -30,7 +33,8 @@ function percent(value: unknown) {
   return Number.isFinite(normalized) && normalized >= 0 && normalized <= 100 ? Math.round(normalized) : null;
 }
 function value(row: Record<string, unknown>, names: string[]) {
-  const key = Object.keys(row).find((k) => names.some((name) => k.trim().toLowerCase() === name.toLowerCase()));
+  const accepted = names.map(normalizeHeader);
+  const key = Object.keys(row).find((k) => accepted.includes(normalizeHeader(k)));
   return key ? row[key] : "";
 }
 function isMissingColumn(error: { message?: string } | null) {
@@ -48,14 +52,12 @@ export async function POST(req: NextRequest) {
 
   const workbook = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  if (!sheet) return NextResponse.json({ error: "The file does not contain a readable worksheet." }, { status: 400 });
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
   if (rows.length > 500) return NextResponse.json({ error: "Import is limited to 500 rows." }, { status: 400 });
-  if (!rows.length) return NextResponse.json({ error: "The file contains no data rows." }, { status: 400 });
+  if (!rows.length) return NextResponse.json({ error: "The file contains no data rows. Include a header row and at least one project row." }, { status: 400 });
 
   const db = supabaseAdmin();
-
-  // From Projects, an import without project_id creates new projects. When a
-  // project_id is supplied, retain the task-import behavior for project detail.
   if (!projectId) {
     const parsed = rows.map((row, index) => ({
       index: index + 2,
@@ -66,7 +68,7 @@ export async function POST(req: NextRequest) {
       end_date: dateValue(value(row, ["end_date", "end date", "end", "due"])),
     }));
     const invalid = parsed.filter((row) => !row.name);
-    if (invalid.length) return NextResponse.json({ error: invalid.map((row) => `Row ${row.index}: Project name is required`).join("; ") }, { status: 400 });
+    if (invalid.length) return NextResponse.json({ error: `${invalid.map((row) => `Row ${row.index}: Project name is required`).join("; ")} Check that the file has a header named name or project.` }, { status: 400 });
     const { data: projects, error } = await db.from("projects").insert(parsed.map(({ name, description, status, start_date, end_date }) => ({ name, description, status, start_date, end_date, created_by: auth.id }))).select("id");
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     if (projects?.length) await db.from("project_members").insert(projects.map((project) => ({ project_id: project.id, user_id: auth.id, role: "owner" })));
@@ -87,9 +89,7 @@ export async function POST(req: NextRequest) {
   if (invalid.length) return NextResponse.json({ error: invalid.map((row) => `Row ${row.index}: ${!row.title ? "Task Name is required" : "% Complete must be between 0 and 100"}`).join("; ") }, { status: 400 });
   const modern = parsed.map((row) => ({ title: row.title, project_id: projectId, start_date: row.start, due_date: row.due, duration_days: row.days, percent_complete: row.complete, status: row.complete === 100 ? "done" : row.complete === 0 ? "todo" : "in_progress", created_by: auth.id }));
   let result = await db.from("tasks").insert(modern);
-  if (result.error && isMissingColumn(result.error)) {
-    result = await db.from("tasks").insert(modern.map(({ title, project_id, start_date, due_date, status, created_by }) => ({ title, project_id, start_date, due_date, status, created_by })));
-  }
+  if (result.error && isMissingColumn(result.error)) result = await db.from("tasks").insert(modern.map(({ title, project_id, start_date, due_date, status, created_by }) => ({ title, project_id, start_date, due_date, status, created_by })));
   if (result.error) return NextResponse.json({ error: result.error.message }, { status: 500 });
   return NextResponse.json({ imported: modern.length, type: "tasks" });
 }
