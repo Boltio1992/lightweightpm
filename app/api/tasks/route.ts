@@ -3,10 +3,10 @@ import { requireUser } from "@/lib/requireUser";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 
 const MODERN_TASK_SELECT =
-  "id, project_id, parent_task_id, title, description, status, priority, assignee_id, start_date, due_date, sla_date, duration_days, percent_complete, sort_order, created_by, created_at, updated_at, assignee:users!tasks_assignee_id_fkey(id, username, name, title, role, created_at), project:projects(id, name)";
+  "id, project_id, parent_task_id, title, description, status, priority, assignee_id, start_date, due_date, sla_date, duration_days, percent_complete, sort_order, created_by, created_at, updated_at, assignee:users!tasks_assignee_id_fkey(id, full_name, email), project:projects!tasks_project_id_fkey(id, name)";
 
 const LEGACY_TASK_SELECT =
-  "id, project_id, parent_task_id, title, description, status, priority, assignee_id, start_date, due_date, sla_date, sort_order, created_by, created_at, updated_at, assignee:users!tasks_assignee_id_fkey(id, username, name, title, role, created_at), project:projects(id, name)";
+  "id, project_id, parent_task_id, title, description, status, priority, assignee_id, start_date, due_date, sla_date, sort_order, created_by, created_at, updated_at, assignee:users!tasks_assignee_id_fkey(id, full_name, email), project:projects!tasks_project_id_fkey(id, name)";
 
 function missingColumn(error: { message?: string } | null) {
   return /column .*does not exist|schema cache/i.test(error?.message ?? "");
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   }
 
   const modernResult = await query;
-  let data = modernResult.data;
+  let data: Array<Record<string, unknown>> | null = (modernResult.data as Array<Record<string, unknown>> | null) ?? null;
   let error = modernResult.error;
 
   if (error && missingColumn(error)) {
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
     }
 
     const legacyResult = await legacy;
-    data = legacyResult.data;
+    data = (legacyResult.data as Array<Record<string, unknown>> | null) ?? null;
     error = legacyResult.error;
   }
 
@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({
-    tasks: (data ?? []).map((task) => withDefaults(task as Record<string, unknown>)),
+    tasks: (data ?? []).map((task) => withDefaults(task)),
   });
 }
 
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
     .select(MODERN_TASK_SELECT)
     .single();
 
-  let data = modernResult.data;
+  let data: Record<string, unknown> | null = (modernResult.data as Record<string, unknown> | null) ?? null;
   let error = modernResult.error;
 
   if (error && missingColumn(error)) {
@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
       .select(LEGACY_TASK_SELECT)
       .single();
 
-    data = legacyResult.data;
+    data = (legacyResult.data as Record<string, unknown> | null) ?? null;
     error = legacyResult.error;
   }
 
