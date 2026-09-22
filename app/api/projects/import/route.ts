@@ -59,19 +59,31 @@ export async function POST(req: NextRequest) {
 
   const db = supabaseAdmin();
   if (!projectId) {
-    const parsed = rows.map((row, index) => ({
-      index: index + 2,
-      name: text(value(row, ["name", "project", "project name", "project_name"])),
-      description: text(value(row, ["description"])),
-      status: text(value(row, ["status"])) || "active",
-      start_date: dateValue(value(row, ["start_date", "start date", "start"])),
-      end_date: dateValue(value(row, ["end_date", "end date", "end", "due"])),
-    }));
-    const invalid = parsed.filter((row) => !row.name);
-    if (invalid.length) return NextResponse.json({ error: `${invalid.map((row) => `Row ${row.index}: Project name is required`).join("; ")} Check that the file has a header named name or project.` }, { status: 400 });
-    const { data: projects, error } = await db.from("projects").insert(parsed.map(({ name, description, status, start_date, end_date }) => ({ name, description, status, start_date, end_date, created_by: auth.id }))).select("id");
+    if (rows.length !== 1) {
+      return NextResponse.json(
+        { error: "Import supports one project per file. Please upload a file with exactly one data row." },
+        { status: 400 }
+      );
+    }
+
+    const row = rows[0];
+    const name = text(value(row, ["name", "project", "project name", "project_name"]));
+    const description = text(value(row, ["description"]));
+    const status = text(value(row, ["status"])) || "active";
+    const start_date = dateValue(value(row, ["start_date", "start date", "start"]));
+    const end_date = dateValue(value(row, ["end_date", "end date", "end", "due"]));
+
+    if (!name) {
+      return NextResponse.json({ error: "Project name is required. Check that the file header is named name or project." }, { status: 400 });
+    }
+
+    const { data: projects, error } = await db
+      .from("projects")
+      .insert({ name, description, status, start_date, end_date, created_by: auth.id })
+      .select("id");
+
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    if (projects?.length) await db.from("project_members").insert(projects.map((project) => ({ project_id: project.id, user_id: auth.id, role: "owner" })));
+    if (projects?.length) await db.from("project_members").insert({ project_id: projects[0].id, user_id: auth.id, role: "owner" });
     return NextResponse.json({ imported: projects?.length ?? 0, type: "projects" });
   }
 
