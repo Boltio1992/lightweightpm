@@ -35,24 +35,29 @@ export async function GET(req: NextRequest) {
     query = query.is("project_id", null);
   }
 
-  let result = await query;
+  const modernResult = await query;
+  let data = modernResult.data;
+  let error = modernResult.error;
 
-  if (result.error && missingColumn(result.error)) {
+  if (error && missingColumn(error)) {
     let legacy = db.from("tasks").select(LEGACY_TASK_SELECT).order("sort_order", { ascending: true });
     if (projectId) {
       legacy = legacy.eq("project_id", projectId);
     } else if (standalone) {
       legacy = legacy.is("project_id", null);
     }
-    result = await legacy;
+
+    const legacyResult = await legacy;
+    data = legacyResult.data;
+    error = legacyResult.error;
   }
 
-  if (result.error) {
-    return NextResponse.json({ error: result.error.message }, { status: 500 });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   return NextResponse.json({
-    tasks: (result.data ?? []).map((task) => withDefaults(task as Record<string, unknown>)),
+    tasks: (data ?? []).map((task) => withDefaults(task as Record<string, unknown>)),
   });
 }
 
@@ -93,7 +98,7 @@ export async function POST(req: NextRequest) {
     sort_order: body?.sort_order ?? 0,
   };
 
-  let result = await supabaseAdmin()
+  const modernResult = await supabaseAdmin()
     .from("tasks")
     .insert({
       ...base,
@@ -103,19 +108,25 @@ export async function POST(req: NextRequest) {
     .select(MODERN_TASK_SELECT)
     .single();
 
-  if (result.error && missingColumn(result.error)) {
-    result = await supabaseAdmin()
+  let data = modernResult.data;
+  let error = modernResult.error;
+
+  if (error && missingColumn(error)) {
+    const legacyResult = await supabaseAdmin()
       .from("tasks")
       .insert(base)
       .select(LEGACY_TASK_SELECT)
       .single();
+
+    data = legacyResult.data;
+    error = legacyResult.error;
   }
 
-  if (result.error) {
-    return NextResponse.json({ error: result.error.message }, { status: 500 });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   return NextResponse.json({
-    task: withDefaults(result.data as Record<string, unknown>),
+    task: withDefaults(data as Record<string, unknown>),
   });
 }
