@@ -54,7 +54,7 @@ function Card({
       <p className="mb-2 text-sm text-ink">{task.title}</p>
       <div className="flex flex-wrap items-center gap-1.5">
         <PriorityBadge priority={task.priority} />
-        {task.parent_task_id && <span className="chip bg-gray-100 text-gray-500">sub-task</span>}
+        {task.parent_task_id && <span className="chip bg-subtle text-muted">sub-task</span>}
       </div>
       <div className="mt-2 flex items-center justify-between text-xs">
         <span className={overdue ? "font-medium text-danger" : "text-muted"}>
@@ -73,6 +73,7 @@ function Column({
   label,
   tasks,
   onEdit,
+  droppedId,
 }: {
   status: TaskStatus;
   label: string;

@@ -2,7 +2,7 @@
 
 A lightweight, modular project management app. Username/password login only — no email collection, no third-party auth.
 
-**Stack:** Next.js 14 (App Router) · TypeScript · Tailwind CSS · Supabase (Postgres) · Vercel
+**Stack:** Next.js 14 (App Router) · TypeScript · Tailwind CSS · Framer Motion · Supabase (Postgres) · Vercel
 
 ---
 
