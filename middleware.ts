@@ -3,11 +3,12 @@ import { jwtVerify } from "jose";
 
 const COOKIE_NAME = "lightpm_session";
 const PUBLIC_PATHS = ["/login", "/register"];
+const DEFAULT_SESSION_SECRET = "lightpm-dev-session-secret-key-32-chars-long";
 
 async function isValidSession(token: string | undefined) {
   if (!token) return false;
   try {
-    const secret = new TextEncoder().encode(process.env.SESSION_SECRET);
+    const secret = new TextEncoder().encode(process.env.SESSION_SECRET || DEFAULT_SESSION_SECRET);
     await jwtVerify(token, secret);
     return true;
   } catch {

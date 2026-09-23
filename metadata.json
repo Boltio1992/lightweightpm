@@ -1,0 +1,8 @@
+{
+  "name": "LightPM",
+  "description": "A lightweight, modular project management app with Kanban boards, Gantt timelines, task breakdowns, and team collaboration.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

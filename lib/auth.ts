@@ -7,11 +7,10 @@ import type { UserPublic } from "@/types";
 const COOKIE_NAME = "lightpm_session";
 const SESSION_DAYS = 30;
 
+const DEFAULT_SESSION_SECRET = "lightpm-dev-session-secret-key-32-chars-long";
+
 function getSecret() {
-  const secret = process.env.SESSION_SECRET;
-  if (!secret) {
-    throw new Error("Missing SESSION_SECRET environment variable.");
-  }
+  const secret = process.env.SESSION_SECRET || DEFAULT_SESSION_SECRET;
   return new TextEncoder().encode(secret);
 }
 

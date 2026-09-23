@@ -37,6 +37,7 @@ export type Task = {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  subtasks?: Task[];
 };
 export const TASK_STATUSES: { key: TaskStatus; label: string }[] = [
   { key: "todo", label: "To Do" },

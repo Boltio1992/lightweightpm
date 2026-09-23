@@ -69,6 +69,10 @@ function LoginPageInner() {
           Register
         </Link>
       </p>
+      <div className="mt-5 rounded-md border border-line bg-subtle p-2.5 text-center text-xs text-muted">
+        Demo: <span className="font-mono font-medium text-ink">admin</span> /{" "}
+        <span className="font-mono font-medium text-ink">password123</span>
+      </div>
     </>
   );
 }

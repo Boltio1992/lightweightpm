@@ -3,7 +3,11 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "LightPM",
-  description: "A lightweight, modular project management app",
+  description: "A lightweight, modular project management app with Kanban boards, Gantt timelines, task breakdowns, and team collaboration.",
+  openGraph: {
+    title: "LightPM",
+    description: "A lightweight, modular project management app with Kanban boards, Gantt timelines, task breakdowns, and team collaboration.",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
