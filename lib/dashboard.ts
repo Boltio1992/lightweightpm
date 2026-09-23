@@ -21,6 +21,22 @@ export type DashboardProjectRow = {
 
 export type DashboardBreakdown = Record<string, { name: string; total: number; done: number; overdue: number }>;
 
+type DashboardTaskRow = {
+  id: string;
+  project_id: string | null;
+  status: string;
+  due_date: string | null;
+  project?: { id: string; name: string } | null;
+  assignee?: { id: string; name: string; username: string } | null;
+};
+
+type DashboardProjectRowRecord = { id: string; name: string; status: string };
+
+function normalizeRelation<T>(value: T | T[] | null | undefined): T | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
+}
+
 export async function getDashboardData() {
   const db = supabaseAdmin();
   const [{ data: tasks, error: tErr }, { data: projects, error: pErr }] = await Promise.all([
@@ -36,15 +52,20 @@ export async function getDashboardData() {
   if (tErr) throw new Error(tErr.message);
   if (pErr) throw new Error(pErr.message);
 
-  const allTasks = (tasks ?? []) as Array<{
+  const allTasks = ((tasks ?? []) as Array<{
     id: string;
     project_id: string | null;
     status: string;
     due_date: string | null;
-    project?: { id: string; name: string } | null;
-    assignee?: { id: string; name: string; username: string } | null;
-  }>;
-  const allProjects = (projects ?? []) as Array<{ id: string; name: string; status: string }>;
+    project?: { id: string; name: string } | { id: string; name: string }[] | null;
+    assignee?: { id: string; name: string; username: string } | { id: string; name: string; username: string }[] | null;
+  }>).map((task) => ({
+    ...task,
+    project: normalizeRelation(task.project),
+    assignee: normalizeRelation(task.assignee),
+  })) as DashboardTaskRow[];
+
+  const allProjects = (projects ?? []) as DashboardProjectRowRecord[];
 
   const byStatus: Record<string, number> = { todo: 0, in_progress: 0, blocked: 0, done: 0 };
   const perProject: DashboardBreakdown = {};
