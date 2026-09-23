@@ -9,6 +9,14 @@ function validPercent(value: unknown) {
   return Number.isInteger(n) && n >= 0 && n <= 100 ? n : null;
 }
 
+function withDefaults<T extends Record<string, unknown>>(task: T) {
+  return {
+    ...task,
+    duration_days: task.duration_days ?? null,
+    percent_complete: task.percent_complete ?? (task.status === "done" ? 100 : 0),
+  };
+}
+
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const auth = await requireUser();
   if (auth instanceof NextResponse) return auth;
@@ -44,7 +52,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const { data, error } = await db.from("tasks").update(patch).eq("id", params.id).select(SELECT).single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ task: data });
+  return NextResponse.json({ task: withDefaults(data as Record<string, unknown>) });
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
