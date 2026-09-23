@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { fadeScale, motionTransition } from "@/lib/motion";
 
@@ -18,6 +18,16 @@ export default function Modal({
   width?: string;
 }) {
   const reduceMotion = useReducedMotion();
+  const [mounted, setMounted] = useState(open);
+
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+      return;
+    }
+    const timer = window.setTimeout(() => setMounted(false), 220);
+    return () => window.clearTimeout(timer);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -25,6 +35,8 @@ export default function Modal({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
+
+  if (!mounted) return null;
 
   return (
     <AnimatePresence>
