@@ -51,7 +51,7 @@ function BreakdownTable({
       {entries.map(([id, row]) => {
         const pct = row.total ? Math.round((row.done / row.total) * 100) : 0;
         const name = linkBase ? (
-          <Link href={`${linkBase}/${id}`} className="truncate text-sm text-accent hover:underline">
+          <Link href={`${linkBase}/${id}`} className="truncate text-sm text-ink hover:underline">
             {row.name}
           </Link>
         ) : (
