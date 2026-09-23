@@ -1,11 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import PageHeader from "@/components/PageHeader";
 import TaskList from "@/components/TaskList";
 import TaskModal from "@/components/TaskModal";
 import KanbanBoard from "@/components/KanbanBoard";
 import GanttTimeline from "@/components/GanttTimeline";
+import { TaskViewSkeleton } from "@/components/LoadingSkeletons";
+import { fadeUp, motionTransition } from "@/lib/motion";
 import { api } from "@/lib/api";
 import { nestTasks } from "@/lib/tasks";
 import type { Task, UserPublic } from "@/types";
@@ -14,6 +17,7 @@ type Scope = "standalone" | "all";
 type View = "list" | "kanban" | "timeline";
 
 export default function TasksPage() {
+  const reduceMotion = useReducedMotion();
   const [scope, setScope] = useState<Scope>("standalone");
   const [view, setView] = useState<View>("list");
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -72,7 +76,8 @@ export default function TasksPage() {
 
       <div className="px-8 py-6">
         <div className="mb-4 flex flex-wrap items-center gap-4">
-          <div className="flex gap-1">
+          <LayoutGroup id="scope-toggle">
+            <div className="relative flex gap-1 rounded-md bg-subtle p-1">
             {(
               [
                 { k: "standalone", l: "No project" },
@@ -82,16 +87,25 @@ export default function TasksPage() {
               <button
                 key={s.k}
                 onClick={() => setScope(s.k)}
-                className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
-                  scope === s.k ? "bg-ink text-white" : "text-muted hover:bg-subtle"
+                className={`relative rounded-md px-2.5 py-1 text-xs font-medium transition ${
+                  scope === s.k ? "text-ink" : "text-muted hover:text-ink"
                 }`}
               >
+                {scope === s.k && (
+                  <motion.span
+                    layoutId="scope-pill"
+                    className="absolute inset-0 -z-10 rounded-md border border-line bg-surface shadow-soft"
+                    transition={reduceMotion ? { duration: 0 } : motionTransition.fast}
+                  />
+                )}
                 {s.l}
               </button>
             ))}
-          </div>
+            </div>
+          </LayoutGroup>
 
-          <div className="flex gap-1">
+          <LayoutGroup id="view-toggle">
+            <div className="relative flex gap-1 rounded-md bg-subtle p-1">
             {(
               [
                 { k: "list", l: "List" },
@@ -102,26 +116,46 @@ export default function TasksPage() {
               <button
                 key={v.k}
                 onClick={() => setView(v.k)}
-                className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
-                  view === v.k ? "bg-subtle text-ink" : "text-muted hover:bg-subtle"
+                className={`relative rounded-md px-2.5 py-1 text-xs font-medium transition ${
+                  view === v.k ? "text-ink" : "text-muted hover:text-ink"
                 }`}
               >
+                {view === v.k && (
+                  <motion.span
+                    layoutId="view-pill"
+                    className="absolute inset-0 -z-10 rounded-md border border-line bg-surface shadow-soft"
+                    transition={reduceMotion ? { duration: 0 } : motionTransition.fast}
+                  />
+                )}
                 {v.l}
               </button>
             ))}
-          </div>
+            </div>
+          </LayoutGroup>
 
           <span className="ml-auto text-xs text-muted">{tasks.length} tasks</span>
         </div>
 
         {loading ? (
-          <p className="text-sm text-muted">Loading…</p>
-        ) : view === "list" ? (
-          <TaskList tasks={nested} users={users} onEdit={openEdit} onAddSub={openSub} onChanged={load} />
-        ) : view === "kanban" ? (
-          <KanbanBoard tasks={tasks} onEdit={openEdit} onChanged={load} />
+          <TaskViewSkeleton />
         ) : (
-          <GanttTimeline tasks={tasks} onEdit={openEdit} />
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={`${scope}-${view}`}
+              initial={reduceMotion ? false : fadeUp.initial}
+              animate={reduceMotion ? undefined : fadeUp.animate}
+              exit={reduceMotion ? undefined : fadeUp.exit}
+              transition={reduceMotion ? { duration: 0 } : motionTransition.normal}
+            >
+              {view === "list" ? (
+                <TaskList tasks={nested} users={users} onEdit={openEdit} onAddSub={openSub} onChanged={load} />
+              ) : view === "kanban" ? (
+                <KanbanBoard tasks={tasks} onEdit={openEdit} onChanged={load} />
+              ) : (
+                <GanttTimeline tasks={tasks} onEdit={openEdit} />
+              )}
+            </motion.div>
+          </AnimatePresence>
         )}
       </div>
 

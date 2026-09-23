@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --motion-fast: 130ms;
+  --motion-normal: 190ms;
+  --motion-slow: 260ms;
+  --motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 html,
 body {
   height: 100%;
@@ -10,6 +17,7 @@ body {
 body {
   color: #37352f;
   background: #ffffff;
+  line-height: 1.45;
 }
 
 * {
@@ -38,9 +46,16 @@ body {
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
+@keyframes app-skeleton {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-md border border-line bg-white px-3 py-1.5 text-sm font-medium text-ink shadow-card transition duration-150 hover:bg-subtle active:scale-[.98] disabled:cursor-wait disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-medium text-ink shadow-soft transition hover:bg-subtle active:scale-[.98] disabled:cursor-wait disabled:opacity-50;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--motion-ease-out);
   }
   .btn-primary {
     @apply btn border-accent bg-accent text-white hover:bg-accent/90;
@@ -49,28 +64,38 @@ body {
     @apply btn border-danger text-danger hover:bg-danger/5;
   }
   .input {
-    @apply w-full rounded-md border border-line bg-white px-3 py-1.5 text-sm text-ink outline-none transition focus:border-accent focus:ring-1 focus:ring-accent;
+    @apply w-full rounded-md border border-line bg-surface px-3 py-1.5 text-sm text-ink outline-none transition focus:border-accent focus:ring-1 focus:ring-accent;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--motion-ease-out);
   }
   .label {
-    @apply mb-1 block text-xs font-medium text-muted;
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted;
   }
   .card {
-    @apply rounded-lg border border-line bg-white shadow-card;
+    @apply rounded-lg border border-line bg-surface shadow-soft;
   }
   .chip {
-    @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+    @apply inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold tracking-wide;
   }
   .animate-page-in {
-    animation: app-fade-in 180ms ease-out both;
+    animation: app-fade-in var(--motion-normal) var(--motion-ease-out) both;
   }
   .animate-modal-in {
-    animation: app-scale-in 160ms ease-out both;
+    animation: app-scale-in var(--motion-fast) var(--motion-ease-out) both;
+  }
+  .skeleton {
+    @apply rounded-md;
+    background: linear-gradient(90deg, #f2f2f0 0%, #e9e9e6 50%, #f2f2f0 100%);
+    background-size: 200% 100%;
+    animation: app-skeleton 1.2s linear infinite;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
