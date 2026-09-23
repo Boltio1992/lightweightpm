@@ -23,7 +23,7 @@ create table if not exists tasks (
   id uuid primary key default gen_random_uuid(), project_id uuid references projects(id) on delete cascade,
   parent_task_id uuid references tasks(id) on delete cascade, title text not null, description text not null default '',
   status text not null default 'todo', priority text not null default 'medium', assignee_id uuid references users(id) on delete set null,
-  start_date date, due_date date, sla_date date, duration_days integer check (duration_days is null or duration_days >= 0),
+  start_date date, due_date date, duration_days integer check (duration_days is null or duration_days >= 0),
   percent_complete integer not null default 0 check (percent_complete between 0 and 100), sort_order integer not null default 0,
   created_by uuid references users(id) on delete set null, created_at timestamptz not null default now(), updated_at timestamptz not null default now()
 );

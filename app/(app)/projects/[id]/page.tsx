@@ -10,7 +10,7 @@ import KanbanBoard from "@/components/KanbanBoard";
 import GanttTimeline from "@/components/GanttTimeline";
 import ProjectMembers from "@/components/ProjectMembers";
 import { ProjectStatusBadge } from "@/components/Badges";
-import { api, fmtDate } from "@/lib/api";
+import { api, fmtDate, isOverdue } from "@/lib/api";
 import { nestTasks } from "@/lib/tasks";
 import type { Project, ProjectMember, Task, UserPublic } from "@/types";
 
@@ -65,11 +65,7 @@ export default function ProjectDetailPage() {
   const stats = useMemo(() => {
     const total = tasks.length;
     const done = tasks.filter((t) => t.status === "done").length;
-    const now = new Date();
-    const overdue = tasks.filter((t) => {
-      const d = t.sla_date || t.due_date;
-      return d && t.status !== "done" && new Date(d) < now;
-    }).length;
+    const overdue = tasks.filter((t) => isOverdue(t)).length;
     return { total, done, overdue, pct: total ? Math.round((done / total) * 100) : 0 };
   }, [tasks]);
 

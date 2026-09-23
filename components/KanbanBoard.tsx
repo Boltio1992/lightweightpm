@@ -35,7 +35,7 @@ function Card({ task, onEdit }: { task: Task; onEdit: (t: Task) => void }) {
       </div>
       <div className="mt-2 flex items-center justify-between text-xs">
         <span className={overdue ? "font-medium text-danger" : "text-muted"}>
-          {fmtDate(task.sla_date || task.due_date)}
+          {fmtDate(task.due_date)}
         </span>
         <span className="truncate text-muted">
           {task.assignee?.name || task.assignee?.username || ""}

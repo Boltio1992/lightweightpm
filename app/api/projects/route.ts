@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isOverdue } from "@/lib/api";
 import { requireUser } from "@/lib/requireUser";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 
@@ -18,12 +19,11 @@ export async function GET() {
 
   const { data: tasks, error: tasksError } = await db
     .from("tasks")
-    .select("id, project_id, status, percent_complete, sla_date, due_date")
+    .select("id, project_id, status, percent_complete, due_date")
     .not("project_id", "is", null);
 
   if (tasksError) return NextResponse.json({ error: tasksError.message }, { status: 500 });
 
-  const now = new Date();
   const stats: Record<string, { total: number; done: number; overdue: number; progressTotal: number }> = {};
 
   for (const task of tasks ?? []) {
@@ -33,8 +33,7 @@ export async function GET() {
     stats[pid].done += task.status === "done" ? 1 : 0;
     stats[pid].progressTotal += Number(task.percent_complete ?? (task.status === "done" ? 100 : 0));
 
-    const deadline = task.sla_date || task.due_date;
-    if (deadline && task.status !== "done" && new Date(deadline) < now) stats[pid].overdue += 1;
+    if (isOverdue(task)) stats[pid].overdue += 1;
   }
 
   const withStats = (projects ?? []).map((project) => {

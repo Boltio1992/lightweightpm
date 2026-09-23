@@ -27,8 +27,25 @@ export function fmtDate(d?: string | null) {
   });
 }
 
-export function isOverdue(task: { status: string; sla_date?: string | null; due_date?: string | null }) {
-  const deadline = task.sla_date || task.due_date;
-  if (!deadline || task.status === "done") return false;
-  return new Date(deadline) < new Date();
+export type DeadlineTask = { status: string; due_date?: string | null };
+
+function dueDateEnd(task: DeadlineTask) {
+  if (!task.due_date) return null;
+
+  const date = new Date(`${task.due_date}T00:00:00`);
+  date.setHours(23, 59, 59, 999);
+  return date;
+}
+
+export function isOverdue(task: DeadlineTask) {
+  if (task.status === "done") return false;
+  const deadline = dueDateEnd(task);
+  return !!deadline && deadline.getTime() < Date.now();
+}
+
+export function isDueSoon(task: DeadlineTask, withinDays = 3) {
+  if (task.status === "done") return false;
+  const deadline = dueDateEnd(task);
+  if (!deadline || isOverdue(task)) return false;
+  return deadline.getTime() - Date.now() < withinDays * 24 * 60 * 60 * 1000;
 }
