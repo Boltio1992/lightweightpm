@@ -8,13 +8,10 @@ import { ProjectStatusBadge } from "@/components/Badges";
 type Summary = {
   totalProjects: number;
   totalTasks: number;
-  projectTaskCount: number;
-  standaloneTaskCount: number;
-  subtaskCount: number;
   doneTasks: number;
   overdue: number;
   dueSoon: number;
-  slaCompliance: number;
+  unscheduled: number;
   byStatus: Record<string, number>;
 };
 
@@ -25,6 +22,8 @@ type ProjectRow = {
   stats: { total: number; done: number; overdue: number };
 };
 
+type Breakdown = Record<string, { name: string; total: number; done: number; overdue: number }>;
+
 function Stat({ label, value, tone }: { label: string; value: string | number; tone?: string }) {
   return (
     <div className="card p-4">
@@ -34,9 +33,55 @@ function Stat({ label, value, tone }: { label: string; value: string | number; t
   );
 }
 
+function BreakdownTable({
+  title,
+  rows,
+  linkBase,
+}: {
+  title: string;
+  rows: Breakdown;
+  linkBase?: string;
+}) {
+  const entries = Object.entries(rows).sort((a, b) => b[1].total - a[1].total);
+
+  return (
+    <div className="card overflow-hidden">
+      <div className="border-b border-line bg-subtle px-4 py-2 text-xs font-medium text-muted">{title}</div>
+      {entries.length === 0 && <p className="px-4 py-8 text-center text-sm text-muted">No data yet.</p>}
+      {entries.map(([id, row]) => {
+        const pct = row.total ? Math.round((row.done / row.total) * 100) : 0;
+        const name = linkBase ? (
+          <Link href={`${linkBase}/${id}`} className="truncate text-sm text-accent hover:underline">
+            {row.name}
+          </Link>
+        ) : (
+          <span className="truncate text-sm text-ink">{row.name}</span>
+        );
+
+        return (
+          <div key={id} className="border-b border-line px-4 py-3 last:border-0">
+            <div className="mb-1.5 flex items-center justify-between gap-3">
+              {name}
+              <span className="flex-none text-xs text-muted">
+                {row.done}/{row.total} done
+                {row.overdue > 0 && <span className="ml-2 font-medium text-danger">{row.overdue} overdue</span>}
+              </span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-subtle">
+              <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [projects, setProjects] = useState<ProjectRow[]>([]);
+  const [perProject, setPerProject] = useState<Breakdown>({});
+  const [perAssignee, setPerAssignee] = useState<Breakdown>({});
 
   useEffect(() => {
     let active = true;
@@ -47,11 +92,15 @@ export default function DashboardPage() {
         if (!active) return;
         setSummary(d.summary ?? null);
         setProjects((d.projects ?? []).slice(0, 6));
+        setPerProject(d.perProject ?? {});
+        setPerAssignee(d.perAssignee ?? {});
       })
       .catch(() => {
         if (!active) return;
         setSummary(null);
         setProjects([]);
+        setPerProject({});
+        setPerAssignee({});
       });
 
     return () => {
@@ -68,9 +117,9 @@ export default function DashboardPage() {
             <Stat label="Projects" value={summary.totalProjects} />
             <Stat label="Total tasks" value={summary.totalTasks} />
             <Stat label="Completed" value={summary.doneTasks} tone="text-good" />
-            <Stat label="Overdue (SLA)" value={summary.overdue} tone="text-danger" />
+            <Stat label="Overdue" value={summary.overdue} tone="text-danger" />
             <Stat label="Due soon" value={summary.dueSoon} tone="text-warn" />
-            <Stat label="SLA compliance" value={`${summary.slaCompliance}%`} tone="text-accent" />
+            <Stat label="Unscheduled" value={summary.unscheduled} />
           </div>
         )}
 
@@ -97,9 +146,6 @@ export default function DashboardPage() {
               <span>In Progress: {summary.byStatus.in_progress ?? 0}</span>
               <span>Blocked: {summary.byStatus.blocked ?? 0}</span>
               <span>Done: {summary.byStatus.done ?? 0}</span>
-              <span className="ml-auto">Project tasks: {summary.projectTaskCount}</span>
-              <span>Standalone tasks: {summary.standaloneTaskCount}</span>
-              <span>Sub-tasks: {summary.subtaskCount}</span>
             </div>
           </div>
         )}
@@ -131,6 +177,11 @@ export default function DashboardPage() {
               <p className="text-sm text-muted">No projects yet. Create your first one from the Projects tab.</p>
             )}
           </div>
+        </div>
+
+        <div className="grid gap-5 lg:grid-cols-2">
+          <BreakdownTable title="By project" rows={perProject} linkBase="/projects" />
+          <BreakdownTable title="By assignee" rows={perAssignee} />
         </div>
       </div>
     </>

@@ -20,7 +20,7 @@ function startOfDay(d: Date) {
 // date is set so partially-filled tasks still appear on the timeline.
 function taskRange(t: Task): { start: Date; end: Date } | null {
   const s = toDate(t.start_date);
-  const e = toDate(t.due_date) ?? toDate(t.sla_date);
+  const e = toDate(t.due_date);
   if (!s && !e) return null;
   if (s && e) return { start: s, end: e < s ? s : e };
   if (s) return { start: s, end: new Date(s.getTime() + DAY_MS) };
@@ -155,9 +155,7 @@ export default function GanttTimeline({
                     onClick={() => onEdit(task)}
                     className={`absolute top-2.5 h-5 rounded ${color} transition hover:opacity-80`}
                     style={{ left: offset, width }}
-                    title={`${task.title} · ${fmtDate(task.start_date)} → ${fmtDate(
-                      task.due_date || task.sla_date
-                    )}`}
+                    title={`${task.title} · ${fmtDate(task.start_date)} → ${fmtDate(task.due_date)}`}
                   />
                 </div>
               );

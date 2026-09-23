@@ -93,7 +93,7 @@ function Row({
             overdue ? "font-medium text-danger" : "text-muted"
           }`}
         >
-          {fmtDate(task.sla_date || task.due_date)}
+          {fmtDate(task.due_date)}
         </span>
 
         <span className="hidden w-24 flex-none truncate text-right text-xs text-muted lg:block">

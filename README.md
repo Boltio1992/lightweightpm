@@ -12,14 +12,14 @@ A lightweight, modular project management app. Username/password login only — 
 |---|---|
 | **Auth** | Register (username, password, confirm password), login, logout. Passwords hashed with bcrypt, session in an httpOnly JWT cookie. |
 | **Profile** | Name, Title, Role — editable, shown across projects. |
+| **Dashboard** | Totals, status distribution, recent projects, plus per-project and per-assignee breakdowns. |
 | **Projects** | List all projects with progress and overdue counts; filter by status; create, edit, delete. |
 | **Project detail** | Four tabs: Tasks, Kanban, Timeline, Members. |
-| **Tasks & sub-tasks** | Nested one level. Status, priority, assignee, start date, due date, SLA date. |
+| **Tasks & sub-tasks** | Nested one level. Status, priority, assignee, start date, and due date. |
 | **Kanban** | Drag-and-drop between To Do / In Progress / Blocked / Done, with optimistic updates. |
 | **Timeline (Gantt)** | Pure-CSS bar chart with auto-scaling day width and a "today" marker. No chart library. |
 | **Members** | Search and add registered users, or type in a "data member" (Name/Title/Role) who never logs in but can still be assigned tasks. |
 | **Standalone tasks** | Tasks with no project, on their own page, with the same List/Kanban/Timeline views. |
-| **Reports** | Totals, completion, overdue, due-soon, SLA compliance %, plus per-project and per-assignee breakdowns. |
 
 ---
 
@@ -28,7 +28,7 @@ A lightweight, modular project management app. Username/password login only — 
 ```
 app/
   (auth)/          login, register        — public pages
-  (app)/           dashboard, projects, tasks, reports, profile — behind auth
+  (app)/           dashboard, projects, tasks, profile — behind auth
   api/             all server routes
 components/        Sidebar, TaskList, KanbanBoard, GanttTimeline, ProjectMembers, TaskModal, Modal, Badges
 lib/               auth.ts, supabaseServer.ts, requireUser.ts, api.ts, tasks.ts
@@ -132,6 +132,6 @@ Every push to `main` redeploys automatically. If you change environment variable
 ## Notes
 
 - **Sub-tasks** are one level deep by design — the schema supports deeper nesting via `parent_task_id`, but the UI renders two levels to keep it readable.
-- **SLA** uses `sla_date`, falling back to `due_date`. A task is overdue when that date has passed and its status isn't `done`. This logic lives in `lib/api.ts` (client) and `app/api/reports/route.ts` (server).
+- **Deadlines** use `due_date` only. Shared overdue and due-soon checks live in `lib/api.ts`.
 - **Data members** get a password hash of `!placeholder-no-login`, which no bcrypt hash can ever match, so those accounts can't be logged into.
 - There's no password reset flow, since there's no email on file. An admin would need to update the `password_hash` directly, or the user re-registers.
