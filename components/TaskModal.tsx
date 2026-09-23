@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Modal from "./Modal";
-import { api } from "@/lib/api";
+import { api, calculateDueDate } from "@/lib/api";
 import type { Task, UserPublic } from "@/types";
 
 export default function TaskModal({ open, onClose, onSaved, task, projectId, parentTaskId, assignableUsers }: { open: boolean; onClose: () => void; onSaved: () => void; task?: Task | null; projectId?: string | null; parentTaskId?: string | null; assignableUsers: UserPublic[] }) {
@@ -16,6 +16,13 @@ export default function TaskModal({ open, onClose, onSaved, task, projectId, par
   const [percentComplete, setPercentComplete] = useState("0");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [calculatedDueDate, setCalculatedDueDate] = useState<string | null>(null);
+
+  // Calculate due date from start date and duration
+  useEffect(() => {
+    const calculated = calculateDueDate(startDate, durationDays ? Number(durationDays) : null);
+    setCalculatedDueDate(calculated);
+  }, [startDate, durationDays]);
 
   useEffect(() => {
     if (!open) return;
@@ -163,6 +170,9 @@ export default function TaskModal({ open, onClose, onSaved, task, projectId, par
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
             />
+            {calculatedDueDate && !dueDate && (
+              <p className="mt-1 text-xs text-muted">Auto-calculated: {new Date(calculatedDueDate + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</p>
+            )}
           </div>
         </div>
         {error && <p className="text-sm text-danger">{error}</p>}
