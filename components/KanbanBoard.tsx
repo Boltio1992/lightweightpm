@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import {
   DndContext,
@@ -120,6 +120,7 @@ export default function KanbanBoard({
 }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [droppedId, setDroppedId] = useState<string | null>(null);
+  const dropTimerRef = useRef<number | null>(null);
   const reduceMotion = useReducedMotion();
   // Local optimistic copy so cards move instantly, before the API round-trip.
   const [optimistic, setOptimistic] = useState<Record<string, TaskStatus>>({});
@@ -132,6 +133,14 @@ export default function KanbanBoard({
   function onDragStart(e: DragStartEvent) {
     setActiveId(String(e.active.id));
   }
+
+  useEffect(() => {
+    return () => {
+      if (dropTimerRef.current !== null) {
+        window.clearTimeout(dropTimerRef.current);
+      }
+    };
+  }, []);
 
   async function onDragEnd(e: DragEndEvent) {
     setActiveId(null);
@@ -154,7 +163,11 @@ export default function KanbanBoard({
         return next;
       });
     } finally {
-      window.setTimeout(() => setDroppedId((id) => (id === taskId ? null : id)), 220);
+      if (dropTimerRef.current !== null) window.clearTimeout(dropTimerRef.current);
+      dropTimerRef.current = window.setTimeout(() => {
+        setDroppedId((id) => (id === taskId ? null : id));
+        dropTimerRef.current = null;
+      }, 220);
     }
   }
 
