@@ -61,6 +61,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Duration must be a non-negative number of days." }, { status: 400 });
   }
 
+  // Auto-calculate due_date from start_date and duration_days if not explicitly provided
+  let dueDate = body?.due_date ?? null;
+  if (!dueDate && body?.start_date && duration) {
+    const startDate = new Date(body.start_date + "T00:00:00");
+    const endDate = new Date(startDate.getTime() + duration * 24 * 60 * 60 * 1000);
+    const year = endDate.getFullYear();
+    const month = String(endDate.getMonth() + 1).padStart(2, "0");
+    const day = String(endDate.getDate()).padStart(2, "0");
+    dueDate = `${year}-${month}-${day}`;
+  }
+
   const base = {
     title,
     description: (body?.description ?? "").toString(),
@@ -68,7 +79,7 @@ export async function POST(req: NextRequest) {
     priority: body?.priority ?? "medium",
     assignee_id: body?.assignee_id ?? null,
     start_date: body?.start_date ?? null,
-    due_date: body?.due_date ?? null,
+    due_date: dueDate,
     project_id: body?.project_id ?? null,
     parent_task_id: body?.parent_task_id ?? null,
     sort_order: body?.sort_order ?? 0,

@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import { ProjectStatusBadge } from "@/components/Badges";
+import { DashboardSkeleton } from "@/components/LoadingSkeletons";
+import { fadeUp, motionTransition } from "@/lib/motion";
 
 type Summary = {
   totalProjects: number;
@@ -25,11 +28,26 @@ type ProjectRow = {
 type Breakdown = Record<string, { name: string; total: number; done: number; overdue: number }>;
 
 function Stat({ label, value, tone }: { label: string; value: string | number; tone?: string }) {
+  const reduceMotion = useReducedMotion();
   return (
-    <div className="card p-4">
+    <motion.div
+      className="card p-4"
+      layout
+      initial={reduceMotion ? false : fadeUp.initial}
+      animate={reduceMotion ? undefined : fadeUp.animate}
+      transition={reduceMotion ? { duration: 0 } : motionTransition.fast}
+    >
       <p className="text-xs font-medium text-muted">{label}</p>
-      <p className={`mt-1 text-2xl font-semibold ${tone ?? "text-ink"}`}>{value}</p>
-    </div>
+      <motion.p
+        key={String(value)}
+        className={`mt-1 text-2xl font-semibold ${tone ?? "text-ink"}`}
+        initial={reduceMotion ? false : { opacity: 0.75, y: 2 }}
+        animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+        transition={reduceMotion ? { duration: 0 } : motionTransition.fast}
+      >
+        {value}
+      </motion.p>
+    </motion.div>
   );
 }
 
@@ -78,6 +96,7 @@ function BreakdownTable({
 }
 
 export default function DashboardPage() {
+  const reduceMotion = useReducedMotion();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [perProject, setPerProject] = useState<Breakdown>({});
@@ -111,8 +130,10 @@ export default function DashboardPage() {
   return (
     <>
       <PageHeader title="Dashboard" subtitle="A quick look at everything in flight." />
-      <div className="space-y-8 px-8 py-6">
-        {summary && (
+      {!summary ? (
+        <DashboardSkeleton />
+      ) : (
+        <div className="space-y-8 px-8 py-6">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             <Stat label="Projects" value={summary.totalProjects} />
             <Stat label="Total tasks" value={summary.totalTasks} />
@@ -121,9 +142,7 @@ export default function DashboardPage() {
             <Stat label="Due soon" value={summary.dueSoon} tone="text-warn" />
             <Stat label="Unscheduled" value={summary.unscheduled} />
           </div>
-        )}
 
-        {summary && (
           <div className="card p-5">
             <p className="mb-3 text-sm font-medium text-ink">Task breakdown</p>
             <div className="flex h-3 overflow-hidden rounded-full bg-subtle">
@@ -138,7 +157,15 @@ export default function DashboardPage() {
                     : key === "blocked"
                     ? "bg-danger"
                     : "bg-gray-300";
-                return <div key={key} className={color} style={{ width: `${pct}%` }} />;
+                return (
+                  <motion.div
+                    key={key}
+                    className={color}
+                    animate={{ width: `${pct}%` }}
+                    initial={reduceMotion ? { width: `${pct}%` } : { width: 0 }}
+                    transition={reduceMotion ? { duration: 0 } : motionTransition.slow}
+                  />
+                );
               })}
             </div>
             <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted">
@@ -148,42 +175,46 @@ export default function DashboardPage() {
               <span>Done: {summary.byStatus.done ?? 0}</span>
             </div>
           </div>
-        )}
 
-        <div>
-          <div className="mb-3 flex items-center justify-between">
-            <p className="text-sm font-medium text-ink">Recent projects</p>
-            <Link href="/projects" className="text-sm text-accent hover:underline">
-              View all
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {projects.map((p) => (
-              <Link key={p.id} href={`/projects/${p.id}`} className="card block p-4 hover:shadow-pop">
-                <div className="mb-2 flex items-center justify-between">
-                  <p className="truncate font-medium text-ink">{p.name}</p>
-                  <ProjectStatusBadge status={p.status} />
-                </div>
-                <p className="text-xs text-muted">
-                  {p.stats.done}/{p.stats.total} tasks done
-                  {p.stats.overdue > 0 && <span className="text-danger"> · {p.stats.overdue} overdue</span>}
-                </p>
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm font-medium text-ink">Recent projects</p>
+              <Link href="/projects" className="text-sm text-accent hover:underline">
+                View all
               </Link>
-            ))}
-            {projects.length === 0 && !summary && (
-              <p className="text-sm text-muted">Loading dashboard…</p>
-            )}
-            {projects.length === 0 && summary && (
-              <p className="text-sm text-muted">No projects yet. Create your first one from the Projects tab.</p>
-            )}
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {projects.map((p) => (
+                <motion.div
+                  key={p.id}
+                  initial={reduceMotion ? false : fadeUp.initial}
+                  animate={reduceMotion ? undefined : fadeUp.animate}
+                  transition={reduceMotion ? { duration: 0 } : motionTransition.normal}
+                >
+                  <Link href={`/projects/${p.id}`} className="card block p-4 transition hover:shadow-pop">
+                    <div className="mb-2 flex items-center justify-between">
+                      <p className="truncate font-medium text-ink">{p.name}</p>
+                      <ProjectStatusBadge status={p.status} />
+                    </div>
+                    <p className="text-xs text-muted">
+                      {p.stats.done}/{p.stats.total} tasks done
+                      {p.stats.overdue > 0 && <span className="text-danger"> · {p.stats.overdue} overdue</span>}
+                    </p>
+                  </Link>
+                </motion.div>
+              ))}
+              {projects.length === 0 && (
+                <p className="text-sm text-muted">No projects yet. Create your first one from the Projects tab.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-2">
+            <BreakdownTable title="By project" rows={perProject} linkBase="/projects" />
+            <BreakdownTable title="By assignee" rows={perAssignee} />
           </div>
         </div>
-
-        <div className="grid gap-5 lg:grid-cols-2">
-          <BreakdownTable title="By project" rows={perProject} linkBase="/projects" />
-          <BreakdownTable title="By assignee" rows={perAssignee} />
-        </div>
-      </div>
+      )}
     </>
   );
 }

@@ -10,10 +10,16 @@ const config: Config = {
         line: "#eaeaea",
         canvas: "#ffffff",
         subtle: "#f7f7f5",
+        surface: "#ffffff",
+        surfaceMuted: "#fbfbfa",
         accent: "#2f80ed",
+        accentSoft: "#eef5ff",
         danger: "#eb5757",
+        dangerSoft: "#fff2f2",
         warn: "#f2994a",
+        warnSoft: "#fff5ea",
         good: "#219653",
+        goodSoft: "#edf9f2",
       },
       fontFamily: {
         sans: [
@@ -28,6 +34,7 @@ const config: Config = {
       boxShadow: {
         card: "0 1px 2px rgba(0,0,0,0.06)",
         pop: "0 4px 16px rgba(0,0,0,0.12)",
+        soft: "0 2px 10px rgba(12, 12, 13, 0.06)",
       },
       borderRadius: {
         md: "6px",

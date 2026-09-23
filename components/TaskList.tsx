@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { PriorityBadge, StatusBadge } from "./Badges";
 import { api, fmtDate, isOverdue } from "@/lib/api";
+import { fadeUp, motionTransition } from "@/lib/motion";
 import type { Task, UserPublic } from "@/types";
 
 function Row({
@@ -20,6 +22,7 @@ function Row({
 }) {
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(true);
+  const reduceMotion = useReducedMotion();
   const subtasks = task.subtasks ?? [];
   const overdue = isOverdue(task);
 
@@ -43,7 +46,12 @@ function Row({
 
   return (
     <>
-      <div
+      <motion.div
+        layout
+        initial={reduceMotion ? false : fadeUp.initial}
+        animate={reduceMotion ? undefined : fadeUp.animate}
+        exit={reduceMotion ? undefined : fadeUp.exit}
+        transition={reduceMotion ? { duration: 0 } : motionTransition.fast}
         className="group flex items-center gap-3 border-b border-line px-4 py-2.5 hover:bg-subtle"
         style={{ paddingLeft: 16 + depth * 24 }}
       >
@@ -88,6 +96,28 @@ function Row({
           <StatusBadge status={task.status} />
         </div>
 
+        {/* Duration display */}
+        <span className="hidden w-16 flex-none text-center text-xs text-muted lg:block">
+          {task.duration_days ? `${task.duration_days}d` : "—"}
+        </span>
+
+        {/* Progress indicator */}
+        <div className="hidden w-20 flex-none items-center gap-1 md:flex">
+          {task.percent_complete > 0 ? (
+            <>
+              <div className="h-1 w-10 rounded-full bg-gray-200 overflow-hidden flex-1">
+                <div 
+                  className="h-full bg-accent" 
+                  style={{ width: `${task.percent_complete}%` }}
+                />
+              </div>
+              <span className="text-xs font-medium text-muted w-8 text-right">{task.percent_complete}%</span>
+            </>
+          ) : (
+            <span className="text-xs text-muted">—</span>
+          )}
+        </div>
+
         <span
           className={`hidden w-28 flex-none text-right text-xs md:block ${
             overdue ? "font-medium text-danger" : "text-muted"
@@ -118,9 +148,10 @@ function Row({
             Delete
           </button>
         </div>
-      </div>
+      </motion.div>
 
-      {open &&
+      {reduceMotion ? (
+        open &&
         subtasks.map((st) => (
           <Row
             key={st.id}
@@ -130,7 +161,33 @@ function Row({
             onAddSub={onAddSub}
             onChanged={onChanged}
           />
-        ))}
+        ))
+      ) : (
+        <AnimatePresence initial={false}>
+          {open && subtasks.length > 0 && (
+            <motion.div
+              key={`${task.id}-children`}
+              layout
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={motionTransition.normal}
+              className="overflow-hidden"
+            >
+              {subtasks.map((st) => (
+                <Row
+                  key={st.id}
+                  task={st}
+                  depth={depth + 1}
+                  onEdit={onEdit}
+                  onAddSub={onAddSub}
+                  onChanged={onChanged}
+                />
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
     </>
   );
 }
@@ -162,13 +219,17 @@ export default function TaskList({
         <span className="w-4" />
         <span className="flex-1">Task</span>
         <span className="hidden sm:block">Priority / Status</span>
+        <span className="hidden w-16 text-center lg:block">Duration</span>
+        <span className="hidden w-20 md:block">Progress</span>
         <span className="hidden w-28 text-right md:block">Deadline</span>
         <span className="hidden w-24 text-right lg:block">Assignee</span>
         <span className="w-[76px]" />
       </div>
-      {tasks.map((t) => (
-        <Row key={t.id} task={t} depth={0} onEdit={onEdit} onAddSub={onAddSub} onChanged={onChanged} />
-      ))}
+      <AnimatePresence initial={false}>
+        {tasks.map((t) => (
+          <Row key={t.id} task={t} depth={0} onEdit={onEdit} onAddSub={onAddSub} onChanged={onChanged} />
+        ))}
+      </AnimatePresence>
     </div>
   );
 }

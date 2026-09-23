@@ -1,10 +1,10 @@
 import type { TaskPriority, TaskStatus } from "@/types";
 
 const STATUS_STYLE: Record<TaskStatus, string> = {
-  todo: "bg-gray-100 text-gray-600",
-  in_progress: "bg-blue-50 text-accent",
-  blocked: "bg-red-50 text-danger",
-  done: "bg-green-50 text-good",
+  todo: "bg-subtle text-muted",
+  in_progress: "bg-accentSoft text-accent",
+  blocked: "bg-dangerSoft text-danger",
+  done: "bg-goodSoft text-good",
 };
 
 const STATUS_LABEL: Record<TaskStatus, string> = {
@@ -19,10 +19,10 @@ export function StatusBadge({ status }: { status: TaskStatus }) {
 }
 
 const PRIORITY_STYLE: Record<TaskPriority, string> = {
-  urgent: "bg-red-50 text-danger",
-  high: "bg-orange-50 text-warn",
-  medium: "bg-blue-50 text-accent",
-  low: "bg-gray-100 text-gray-500",
+  urgent: "bg-dangerSoft text-danger",
+  high: "bg-warnSoft text-warn",
+  medium: "bg-accentSoft text-accent",
+  low: "bg-subtle text-muted",
 };
 
 export function PriorityBadge({ priority }: { priority: TaskPriority }) {
@@ -31,10 +31,10 @@ export function PriorityBadge({ priority }: { priority: TaskPriority }) {
 
 export function ProjectStatusBadge({ status }: { status: string }) {
   const style: Record<string, string> = {
-    active: "bg-green-50 text-good",
-    on_hold: "bg-orange-50 text-warn",
-    done: "bg-blue-50 text-accent",
-    archived: "bg-gray-100 text-gray-500",
+    active: "bg-goodSoft text-good",
+    on_hold: "bg-warnSoft text-warn",
+    done: "bg-accentSoft text-accent",
+    archived: "bg-subtle text-muted",
   };
   const label: Record<string, string> = {
     active: "Active",
