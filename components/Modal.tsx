@@ -25,9 +25,13 @@ export default function Modal({
       setMounted(true);
       return;
     }
+    if (reduceMotion) {
+      setMounted(false);
+      return;
+    }
     const timer = window.setTimeout(() => setMounted(false), 220);
     return () => window.clearTimeout(timer);
-  }, [open]);
+  }, [open, reduceMotion]);
 
   useEffect(() => {
     if (!open) return;

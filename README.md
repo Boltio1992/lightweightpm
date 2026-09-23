@@ -71,6 +71,8 @@ npm install
 cp .env.example .env.local
 ```
 
+Use Node.js 22+.
+
 Edit `.env.local`:
 
 ```
