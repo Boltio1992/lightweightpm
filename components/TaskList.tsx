@@ -128,30 +128,44 @@ function Row({
         </div>
       </motion.div>
 
-      <AnimatePresence initial={false}>
-        {open && subtasks.length > 0 && (
-          <motion.div
-            key={`${task.id}-children`}
-            layout
-            initial={reduceMotion ? false : { opacity: 0, height: 0 }}
-            animate={reduceMotion ? { opacity: 1, height: "auto" } : { opacity: 1, height: "auto" }}
-            exit={reduceMotion ? { opacity: 0, height: 0 } : { opacity: 0, height: 0 }}
-            transition={reduceMotion ? { duration: 0 } : motionTransition.normal}
-            className="overflow-hidden"
-          >
-            {subtasks.map((st) => (
-              <Row
-                key={st.id}
-                task={st}
-                depth={depth + 1}
-                onEdit={onEdit}
-                onAddSub={onAddSub}
-                onChanged={onChanged}
-              />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {reduceMotion ? (
+        open &&
+        subtasks.map((st) => (
+          <Row
+            key={st.id}
+            task={st}
+            depth={depth + 1}
+            onEdit={onEdit}
+            onAddSub={onAddSub}
+            onChanged={onChanged}
+          />
+        ))
+      ) : (
+        <AnimatePresence initial={false}>
+          {open && subtasks.length > 0 && (
+            <motion.div
+              key={`${task.id}-children`}
+              layout
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={motionTransition.normal}
+              className="overflow-hidden"
+            >
+              {subtasks.map((st) => (
+                <Row
+                  key={st.id}
+                  task={st}
+                  depth={depth + 1}
+                  onEdit={onEdit}
+                  onAddSub={onAddSub}
+                  onChanged={onChanged}
+                />
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
     </>
   );
 }

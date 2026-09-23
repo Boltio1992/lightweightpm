@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { fadeScale, motionTransition } from "@/lib/motion";
 
@@ -18,6 +18,7 @@ export default function Modal({
   width?: string;
 }) {
   const reduceMotion = useReducedMotion();
+  const headingId = useId();
   const [mounted, setMounted] = useState(open);
 
   useEffect(() => {
@@ -53,12 +54,17 @@ export default function Modal({
       <motion.div
         className={`card w-full ${width} shadow-pop`}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={headingId}
         initial={false}
         animate={reduceMotion ? { opacity: open ? 1 : 0 } : open ? fadeScale.animate : fadeScale.exit}
         transition={reduceMotion ? { duration: 0 } : motionTransition.normal}
       >
         <div className="flex items-center justify-between border-b border-line px-5 py-3">
-          <h2 className="text-sm font-semibold text-ink">{title}</h2>
+          <h2 id={headingId} className="text-sm font-semibold text-ink">
+            {title}
+          </h2>
           <button onClick={onClose} className="text-muted transition hover:text-ink" aria-label="Close">
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M6 6l12 12M18 6l-12 12" strokeLinecap="round" />
