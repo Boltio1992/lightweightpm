@@ -51,18 +51,46 @@ function Card({
       }
       transition={reduceMotion ? { duration: 0 } : motionTransition.fast}
     >
-      <p className="mb-2 text-sm text-ink">{task.title}</p>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <PriorityBadge priority={task.priority} />
-        {task.parent_task_id && <span className="chip bg-subtle text-muted">sub-task</span>}
+      <p className="mb-2 text-sm font-medium text-ink">{task.title}</p>
+      
+      {/* Progress bar if percent_complete > 0 */}
+      {task.percent_complete > 0 && (
+        <div className="mb-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs text-muted">Progress</span>
+            <span className="text-xs font-medium text-muted">{task.percent_complete}%</span>
+          </div>
+          <div className="h-1.5 w-full rounded-full bg-gray-200 overflow-hidden">
+            <div 
+              className="h-full bg-accent" 
+              style={{ width: `${task.percent_complete}%` }}
+            />
+          </div>
+        </div>
+      )}
+      
+      <div className="flex flex-wrap items-center gap-1.5 mb-2">
+<PriorityBadge priority={task.priority} />
+{task.parent_task_id && <span className="chip bg-subtle text-muted">sub-task</span>}
+{task.duration_days && (
+  <span className="chip bg-blue-100 text-blue-600">{task.duration_days}d</span>
+)}
       </div>
-      <div className="mt-2 flex items-center justify-between text-xs">
-        <span className={overdue ? "font-medium text-danger" : "text-muted"}>
-          {fmtDate(task.due_date)}
-        </span>
-        <span className="truncate text-muted">
-          {task.assignee?.name || task.assignee?.username || ""}
-        </span>
+      
+      <div className="mt-2 flex flex-col gap-1 text-xs">
+        {task.start_date && (
+          <span className="text-muted">
+            Start: {new Date(task.start_date + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+          </span>
+        )}
+        <div className="flex items-center justify-between">
+          <span className={overdue ? "font-medium text-danger" : "text-muted"}>
+            Due: {fmtDate(task.due_date)}
+          </span>
+          <span className="truncate text-muted">
+            {task.assignee?.name || task.assignee?.username || ""}
+          </span>
+        </div>
       </div>
     </motion.div>
   );

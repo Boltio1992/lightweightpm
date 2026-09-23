@@ -96,6 +96,28 @@ function Row({
           <StatusBadge status={task.status} />
         </div>
 
+        {/* Duration display */}
+        <span className="hidden w-16 flex-none text-center text-xs text-muted lg:block">
+          {task.duration_days ? `${task.duration_days}d` : "—"}
+        </span>
+
+        {/* Progress indicator */}
+        <div className="hidden w-20 flex-none items-center gap-1 md:flex">
+          {task.percent_complete > 0 ? (
+            <>
+              <div className="h-1 w-10 rounded-full bg-gray-200 overflow-hidden flex-1">
+                <div 
+                  className="h-full bg-accent" 
+                  style={{ width: `${task.percent_complete}%` }}
+                />
+              </div>
+              <span className="text-xs font-medium text-muted w-8 text-right">{task.percent_complete}%</span>
+            </>
+          ) : (
+            <span className="text-xs text-muted">—</span>
+          )}
+        </div>
+
         <span
           className={`hidden w-28 flex-none text-right text-xs md:block ${
             overdue ? "font-medium text-danger" : "text-muted"
@@ -197,6 +219,8 @@ export default function TaskList({
         <span className="w-4" />
         <span className="flex-1">Task</span>
         <span className="hidden sm:block">Priority / Status</span>
+        <span className="hidden w-16 text-center lg:block">Duration</span>
+        <span className="hidden w-20 md:block">Progress</span>
         <span className="hidden w-28 text-right md:block">Deadline</span>
         <span className="hidden w-24 text-right lg:block">Assignee</span>
         <span className="w-[76px]" />
