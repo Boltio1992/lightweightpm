@@ -39,12 +39,24 @@ export default function DashboardPage() {
   const [projects, setProjects] = useState<ProjectRow[]>([]);
 
   useEffect(() => {
-    fetch("/api/reports")
+    let active = true;
+
+    fetch("/api/dashboard")
       .then((r) => r.json())
-      .then((d) => setSummary(d.summary));
-    fetch("/api/projects")
-      .then((r) => r.json())
-      .then((d) => setProjects((d.projects ?? []).slice(0, 6)));
+      .then((d) => {
+        if (!active) return;
+        setSummary(d.summary ?? null);
+        setProjects((d.projects ?? []).slice(0, 6));
+      })
+      .catch(() => {
+        if (!active) return;
+        setSummary(null);
+        setProjects([]);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   return (
@@ -112,7 +124,10 @@ export default function DashboardPage() {
                 </p>
               </Link>
             ))}
-            {projects.length === 0 && (
+            {projects.length === 0 && !summary && (
+              <p className="text-sm text-muted">Loading dashboard…</p>
+            )}
+            {projects.length === 0 && summary && (
               <p className="text-sm text-muted">No projects yet. Create your first one from the Projects tab.</p>
             )}
           </div>
