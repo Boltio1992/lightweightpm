@@ -1,10 +1,11 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import Modal from "./Modal";
 import { api, calculateDueDate } from "@/lib/api";
 import type { Task, UserPublic } from "@/types";
 
-export default function TaskModal({ open, onClose, onSaved, task, projectId, parentTaskId, assignableUsers }: { open: boolean; onClose: () => void; onSaved: () => void; task?: Task | null; projectId?: string | null; parentTaskId?: string | null; assignableUsers: UserPublic[] }) {
+export default function TaskModal({ open, onClose, onSaved, task, projectId, parentTaskId, assignableUsers }: { open: boolean; onClose: () => void; onSaved: () => void; task?: Task | null; projectId?: string | null; parentTaskId?: string | null; assignableUsers: UserPublic[]; }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("todo");
@@ -18,7 +19,6 @@ export default function TaskModal({ open, onClose, onSaved, task, projectId, par
   const [error, setError] = useState<string | null>(null);
   const [calculatedDueDate, setCalculatedDueDate] = useState<string | null>(null);
 
-  // Calculate due date from start date and duration
   useEffect(() => {
     const calculated = calculateDueDate(startDate, durationDays ? Number(durationDays) : null);
     setCalculatedDueDate(calculated);
@@ -77,22 +77,11 @@ export default function TaskModal({ open, onClose, onSaved, task, projectId, par
       <form onSubmit={save} className="space-y-3">
         <div>
           <label className="label">Title</label>
-          <input
-            className="input"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="What needs doing?"
-            autoFocus
-            required
-          />
+          <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="What needs doing?" autoFocus required />
         </div>
         <div>
           <label className="label">Description</label>
-          <textarea
-            className="input min-h-[72px] resize-y"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
+          <textarea className="input min-h-[72px] resize-y" value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -100,6 +89,7 @@ export default function TaskModal({ open, onClose, onSaved, task, projectId, par
             <select className="input" value={status} onChange={(e) => setStatus(e.target.value)}>
               <option value="todo">To Do</option>
               <option value="in_progress">In Progress</option>
+              <option value="review">Review</option>
               <option value="blocked">Blocked</option>
               <option value="done">Done</option>
             </select>
@@ -129,47 +119,21 @@ export default function TaskModal({ open, onClose, onSaved, task, projectId, par
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label">Duration (days)</label>
-            <input
-              type="number"
-              min="0"
-              step="1"
-              className="input"
-              value={durationDays}
-              onChange={(e) => setDurationDays(e.target.value)}
-            />
+            <input type="number" min="0" step="1" className="input" value={durationDays} onChange={(e) => setDurationDays(e.target.value)} />
           </div>
           <div>
             <label className="label">% Complete</label>
-            <input
-              type="number"
-              min="0"
-              max="100"
-              step="1"
-              className="input"
-              value={percentComplete}
-              onChange={(e) => setPercentComplete(e.target.value)}
-              required
-            />
+            <input type="number" min="0" max="100" step="1" className="input" value={percentComplete} onChange={(e) => setPercentComplete(e.target.value)} required />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label">Start</label>
-            <input
-              type="date"
-              className="input"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
+            <input type="date" className="input" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
           </div>
           <div>
             <label className="label">Due</label>
-            <input
-              type="date"
-              className="input"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-            />
+            <input type="date" className="input" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
             {calculatedDueDate && !dueDate && (
               <p className="mt-1 text-xs text-muted">Auto-calculated: {new Date(calculatedDueDate + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</p>
             )}
@@ -177,12 +141,8 @@ export default function TaskModal({ open, onClose, onSaved, task, projectId, par
         </div>
         {error && <p className="text-sm text-danger">{error}</p>}
         <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={onClose} className="btn">
-            Cancel
-          </button>
-          <button className="btn-primary" disabled={saving}>
-            {saving ? "Saving…" : task ? "Save changes" : "Create task"}
-          </button>
+          <button type="button" onClick={onClose} className="btn">Cancel</button>
+          <button className="btn-primary" disabled={saving}>{saving ? "Saving…" : task ? "Save changes" : "Create task"}</button>
         </div>
       </form>
     </Modal>

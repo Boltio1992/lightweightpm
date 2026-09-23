@@ -3,6 +3,7 @@ import type { TaskPriority, TaskStatus } from "@/types";
 const STATUS_STYLE: Record<TaskStatus, string> = {
   todo: "bg-subtle text-muted",
   in_progress: "bg-accentSoft text-accent",
+  review: "bg-warnSoft text-warn",
   blocked: "bg-dangerSoft text-danger",
   done: "bg-goodSoft text-good",
 };
@@ -10,6 +11,7 @@ const STATUS_STYLE: Record<TaskStatus, string> = {
 const STATUS_LABEL: Record<TaskStatus, string> = {
   todo: "To Do",
   in_progress: "In Progress",
+  review: "Review",
   blocked: "Blocked",
   done: "Done",
 };
