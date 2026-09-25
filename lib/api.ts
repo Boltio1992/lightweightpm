@@ -14,6 +14,11 @@ export async function api<T = any>(
   });
 
   const data = await res.json().catch(() => ({}));
+  if (res.status === 401) {
+    if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+      window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+    }
+  }
   if (!res.ok) throw new Error((data as any).error || "Request failed.");
   return data as T;
 }

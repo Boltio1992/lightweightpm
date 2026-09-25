@@ -5,6 +5,9 @@ import { supabaseAdmin } from "@/lib/supabaseServer";
 const TASK_SELECT =
   "id, project_id, parent_task_id, title, description, status, priority, assignee_id, start_date, due_date, duration_days, percent_complete, sort_order, tags, created_by, created_at, updated_at, assignee:users!tasks_assignee_id_fkey(id, username, name, title, role, created_at), project:projects!tasks_project_id_fkey(id, name)";
 
+const TASK_SELECT_SIMPLE =
+  "id, project_id, parent_task_id, title, description, status, priority, assignee_id, start_date, due_date, duration_days, percent_complete, sort_order, tags, created_by, created_at, updated_at, assignee:users(id, username, name, title, role, created_at), project:projects(id, name)";
+
 function withDefaults<T extends Record<string, unknown>>(task: T) {
   return {
     ...task,
@@ -22,6 +25,7 @@ export async function GET(req: NextRequest) {
   const standalone = req.nextUrl.searchParams.get("standalone") === "true";
   const db = supabaseAdmin();
 
+  // Try primary query with explicit foreign key hints
   let query = db.from("tasks").select(TASK_SELECT).order("sort_order", { ascending: true });
   if (projectId) {
     query = query.eq("project_id", projectId);
@@ -29,7 +33,65 @@ export async function GET(req: NextRequest) {
     query = query.is("project_id", null);
   }
 
-  const { data, error } = await query;
+  let { data, error } = await query;
+
+  // Fallback 1: If PostgREST failed due to foreign key hints, try simple join
+  if (error) {
+    let fallbackQuery = db.from("tasks").select(TASK_SELECT_SIMPLE).order("sort_order", { ascending: true });
+    if (projectId) {
+      fallbackQuery = fallbackQuery.eq("project_id", projectId);
+    } else if (standalone) {
+      fallbackQuery = fallbackQuery.is("project_id", null);
+    }
+
+    const fallbackRes = await fallbackQuery;
+    if (!fallbackRes.error && fallbackRes.data) {
+      data = fallbackRes.data;
+      error = null;
+    } else {
+      // Fallback 2: Direct raw select of tasks table to ensure data is never blocked
+      let rawQuery = db.from("tasks").select("*").order("sort_order", { ascending: true });
+      if (projectId) {
+        rawQuery = rawQuery.eq("project_id", projectId);
+      } else if (standalone) {
+        rawQuery = rawQuery.is("project_id", null);
+      }
+
+      const rawRes = await rawQuery;
+      if (!rawRes.error && rawRes.data) {
+        const rawTasks = rawRes.data || [];
+        const assigneeIds = [...new Set(rawTasks.map((t: any) => t.assignee_id).filter(Boolean))];
+        const projectIds = [...new Set(rawTasks.map((t: any) => t.project_id).filter(Boolean))];
+
+        const usersMap: Record<string, any> = {};
+        const projectsMap: Record<string, any> = {};
+
+        if (assigneeIds.length > 0) {
+          const { data: usersData } = await db
+            .from("users")
+            .select("id, username, name, title, role, created_at")
+            .in("id", assigneeIds);
+          (usersData || []).forEach((u: any) => { usersMap[u.id] = u; });
+        }
+
+        if (projectIds.length > 0) {
+          const { data: projectsData } = await db
+            .from("projects")
+            .select("id, name")
+            .in("id", projectIds);
+          (projectsData || []).forEach((p: any) => { projectsMap[p.id] = p; });
+        }
+
+        data = rawTasks.map((t: any) => ({
+          ...t,
+          assignee: t.assignee_id ? usersMap[t.assignee_id] || null : null,
+          project: t.project_id ? projectsMap[t.project_id] || null : null,
+        }));
+        error = null;
+      }
+    }
+  }
+
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -87,7 +149,8 @@ export async function POST(req: NextRequest) {
     tags: Array.isArray(body?.tags) ? body.tags : [],
   };
 
-  const { data, error } = await supabaseAdmin()
+  const db = supabaseAdmin();
+  let { data, error } = await db
     .from("tasks")
     .insert({
       ...base,
@@ -99,12 +162,30 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) {
+    const fallback = await db
+      .from("tasks")
+      .insert({
+        ...base,
+        duration_days: duration,
+        percent_complete: complete,
+        created_by: auth.id,
+      })
+      .select("*")
+      .single();
+
+    if (!fallback.error && fallback.data) {
+      data = fallback.data;
+      error = null;
+    }
+  }
+
+  if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   // Record creation activity
   if (data?.id) {
-    await supabaseAdmin().from("task_activity").insert({
+    await db.from("task_activity").insert({
       task_id: data.id,
       user_id: auth.id,
       action: "created",

@@ -28,15 +28,41 @@ export async function GET() {
   if (auth instanceof NextResponse) return auth;
 
   const db = supabaseAdmin();
-  const [{ data: tasks, error: tErr }, { data: projects, error: pErr }] = await Promise.all([
-    db
+
+  // Try primary task query with foreign key hints
+  let { data: tasks, error: tErr } = await db
+    .from("tasks")
+    .select(
+      "id, project_id, status, due_date, project:projects!tasks_project_id_fkey(id,name), assignee:users!tasks_assignee_id_fkey(id,name,username)"
+    )
+    .order("created_at", { ascending: false });
+
+  // Fallback 1: try without foreign key constraint names
+  if (tErr) {
+    const fallback = await db
       .from("tasks")
       .select(
-        "id, project_id, status, due_date, project:projects!tasks_project_id_fkey(id,name), assignee:users!tasks_assignee_id_fkey(id,name,username)"
+        "id, project_id, status, due_date, project:projects(id,name), assignee:users(id,name,username)"
       )
-      .order("created_at", { ascending: false }),
-    db.from("projects").select("id, name, status").order("created_at", { ascending: false }),
-  ]);
+      .order("created_at", { ascending: false });
+
+    if (!fallback.error && fallback.data) {
+      tasks = fallback.data;
+      tErr = null;
+    } else {
+      // Fallback 2: raw select * from tasks
+      const rawRes = await db.from("tasks").select("*").order("created_at", { ascending: false });
+      if (!rawRes.error && rawRes.data) {
+        tasks = rawRes.data;
+        tErr = null;
+      }
+    }
+  }
+
+  const { data: projects, error: pErr } = await db
+    .from("projects")
+    .select("id, name, status")
+    .order("created_at", { ascending: false });
 
   if (tErr) return NextResponse.json({ error: tErr.message }, { status: 500 });
   if (pErr) return NextResponse.json({ error: pErr.message }, { status: 500 });
