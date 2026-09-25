@@ -23,6 +23,27 @@ export async function api<T = any>(
   return data as T;
 }
 
+/**
+ * Lightweight cross-component invalidation signal.
+ *
+ * The global "new task" modal lives in the app shell, so it cannot call a
+ * page's refetch directly. Instead of `window.location.reload()` (a full
+ * document reload), pages subscribe to this event and refresh just their data.
+ */
+export const TASKS_CHANGED_EVENT = "lightpm:tasks-changed";
+
+export function emitTasksChanged() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(TASKS_CHANGED_EVENT));
+  }
+}
+
+export function onTasksChanged(handler: () => void) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener(TASKS_CHANGED_EVENT, handler);
+  return () => window.removeEventListener(TASKS_CHANGED_EVENT, handler);
+}
+
 export function fmtDate(d?: string | null) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString(undefined, {

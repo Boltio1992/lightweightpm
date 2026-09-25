@@ -10,7 +10,7 @@ import KanbanBoard from "@/components/KanbanBoard";
 import GanttTimeline from "@/components/GanttTimeline";
 import { TaskViewSkeleton } from "@/components/LoadingSkeletons";
 import { fadeUp, motionTransition } from "@/lib/motion";
-import { api } from "@/lib/api";
+import { api, onTasksChanged } from "@/lib/api";
 import { nestTasks } from "@/lib/tasks";
 import type { Task, UserPublic } from "@/types";
 
@@ -61,6 +61,9 @@ export default function TasksPage() {
       .then((d) => setUsers(d.users ?? []))
       .catch((e) => console.warn("[TasksPage] Could not load users:", e));
   }, []);
+
+  // A task created from the global (⌘K) modal refreshes just this list.
+  useEffect(() => onTasksChanged(load), [load]);
 
   const nested = useMemo(() => nestTasks(tasks), [tasks]);
 

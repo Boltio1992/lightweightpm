@@ -1,3 +1,4 @@
+import { cache } from "react";
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
@@ -56,7 +57,11 @@ export function sessionCookieName() {
 
 // Reads the session cookie (server components / route handlers) and returns
 // the current user's public profile, or null if not logged in.
-export async function getCurrentUser(): Promise<UserPublic | null> {
+//
+// Wrapped in React `cache()` so a single request only hits the users table
+// once — previously the app layout plus every parallel API route handler each
+// ran their own lookup.
+export const getCurrentUser = cache(async function getCurrentUser(): Promise<UserPublic | null> {
   const store = cookies();
   const token = store.get(COOKIE_NAME)?.value;
   if (!token) return null;
@@ -68,8 +73,9 @@ export async function getCurrentUser(): Promise<UserPublic | null> {
     .from("users")
     .select("id, username, name, title, role, created_at")
     .eq("id", userId)
-    .single();
+    .limit(1);
 
-  if (error || !data) return null;
-  return data as UserPublic;
-}
+  if (error) return null;
+  const row = ((data ?? []) as UserPublic[])[0];
+  return row ?? null;
+});

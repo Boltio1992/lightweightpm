@@ -18,10 +18,25 @@ body {
   color: #37352f;
   background: #ffffff;
   line-height: 1.45;
+  /* Kill the grey flash iOS/Android paint on tap — makes the UI feel native. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 * {
   border-color: #eaeaea;
+}
+
+/* Smooth, momentum-friendly scrolling inside the app shell. */
+.scroll-area {
+  scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hint compositing for anything that animates transforms. */
+.gpu {
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 ::-webkit-scrollbar {
@@ -79,6 +94,12 @@ body {
   }
   .animate-page-in {
     animation: app-fade-in var(--motion-normal) var(--motion-ease-out) both;
+  }
+  /* Buttons and cards need a 44px hit area to feel right on touch devices. */
+  .tap {
+    @apply relative;
+    min-height: 44px;
+    touch-action: manipulation;
   }
   .animate-modal-in {
     animation: app-scale-in var(--motion-fast) var(--motion-ease-out) both;

@@ -1,21 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { calculateDueDate } from "@/lib/api";
 import { requireUser } from "@/lib/requireUser";
 import { supabaseAdmin } from "@/lib/supabaseServer";
+import { fetchTaskById, fetchTasks } from "@/lib/tasks-query";
 
-const TASK_SELECT =
-  "id, project_id, parent_task_id, title, description, status, priority, assignee_id, start_date, due_date, duration_days, percent_complete, sort_order, tags, created_by, created_at, updated_at, assignee:users!tasks_assignee_id_fkey(id, username, name, title, role, created_at), project:projects!tasks_project_id_fkey(id, name)";
-
-const TASK_SELECT_SIMPLE =
-  "id, project_id, parent_task_id, title, description, status, priority, assignee_id, start_date, due_date, duration_days, percent_complete, sort_order, tags, created_by, created_at, updated_at, assignee:users(id, username, name, title, role, created_at), project:projects(id, name)";
-
-function withDefaults<T extends Record<string, unknown>>(task: T) {
-  return {
-    ...task,
-    tags: Array.isArray(task.tags) ? task.tags : [],
-    duration_days: task.duration_days ?? null,
-    percent_complete: task.percent_complete ?? (task.status === "done" ? 100 : 0),
-  };
-}
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const auth = await requireUser();
@@ -23,82 +12,24 @@ export async function GET(req: NextRequest) {
 
   const projectId = req.nextUrl.searchParams.get("project_id");
   const standalone = req.nextUrl.searchParams.get("standalone") === "true";
-  const db = supabaseAdmin();
 
-  // Try primary query with explicit foreign key hints
-  let query = db.from("tasks").select(TASK_SELECT).order("sort_order", { ascending: true });
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  } else if (standalone) {
-    query = query.is("project_id", null);
-  }
-
-  let { data, error } = await query;
-
-  // Fallback 1: If PostgREST failed due to foreign key hints, try simple join
-  if (error) {
-    let fallbackQuery = db.from("tasks").select(TASK_SELECT_SIMPLE).order("sort_order", { ascending: true });
-    if (projectId) {
-      fallbackQuery = fallbackQuery.eq("project_id", projectId);
-    } else if (standalone) {
-      fallbackQuery = fallbackQuery.is("project_id", null);
-    }
-
-    const fallbackRes = await fallbackQuery;
-    if (!fallbackRes.error && fallbackRes.data) {
-      data = fallbackRes.data;
-      error = null;
-    } else {
-      // Fallback 2: Direct raw select of tasks table to ensure data is never blocked
-      let rawQuery = db.from("tasks").select("*").order("sort_order", { ascending: true });
-      if (projectId) {
-        rawQuery = rawQuery.eq("project_id", projectId);
-      } else if (standalone) {
-        rawQuery = rawQuery.is("project_id", null);
+  try {
+    const tasks = await fetchTasks({ projectId, standalone });
+    return NextResponse.json(
+      { tasks },
+      {
+        headers: {
+          // Private per-user data: never let a CDN or the browser disk cache serve it.
+          "Cache-Control": "private, no-store",
+        },
       }
-
-      const rawRes = await rawQuery;
-      if (!rawRes.error && rawRes.data) {
-        const rawTasks = rawRes.data || [];
-        const assigneeIds = [...new Set(rawTasks.map((t: any) => t.assignee_id).filter(Boolean))];
-        const projectIds = [...new Set(rawTasks.map((t: any) => t.project_id).filter(Boolean))];
-
-        const usersMap: Record<string, any> = {};
-        const projectsMap: Record<string, any> = {};
-
-        if (assigneeIds.length > 0) {
-          const { data: usersData } = await db
-            .from("users")
-            .select("id, username, name, title, role, created_at")
-            .in("id", assigneeIds);
-          (usersData || []).forEach((u: any) => { usersMap[u.id] = u; });
-        }
-
-        if (projectIds.length > 0) {
-          const { data: projectsData } = await db
-            .from("projects")
-            .select("id, name")
-            .in("id", projectIds);
-          (projectsData || []).forEach((p: any) => { projectsMap[p.id] = p; });
-        }
-
-        data = rawTasks.map((t: any) => ({
-          ...t,
-          assignee: t.assignee_id ? usersMap[t.assignee_id] || null : null,
-          project: t.project_id ? projectsMap[t.project_id] || null : null,
-        }));
-        error = null;
-      }
-    }
+    );
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Failed to load tasks." },
+      { status: 500 }
+    );
   }
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({
-    tasks: (data ?? []).map((task) => withDefaults(task)),
-  });
 }
 
 export async function POST(req: NextRequest) {
@@ -125,17 +56,9 @@ export async function POST(req: NextRequest) {
   }
 
   // Auto-calculate due_date from start_date and duration_days if not explicitly provided
-  let dueDate = body?.due_date ?? null;
-  if (!dueDate && body?.start_date && duration) {
-    const startDate = new Date(body.start_date + "T00:00:00");
-    const endDate = new Date(startDate.getTime() + duration * 24 * 60 * 60 * 1000);
-    const year = endDate.getFullYear();
-    const month = String(endDate.getMonth() + 1).padStart(2, "0");
-    const day = String(endDate.getDate()).padStart(2, "0");
-    dueDate = `${year}-${month}-${day}`;
-  }
+  const dueDate = body?.due_date ?? calculateDueDate(body?.start_date, duration);
 
-  const base = {
+  const row = {
     title,
     description: (body?.description ?? "").toString(),
     status: body?.status ?? (complete === 100 ? "done" : complete === 0 ? "todo" : "in_progress"),
@@ -147,53 +70,35 @@ export async function POST(req: NextRequest) {
     parent_task_id: body?.parent_task_id ?? null,
     sort_order: body?.sort_order ?? 0,
     tags: Array.isArray(body?.tags) ? body.tags : [],
+    duration_days: duration,
+    percent_complete: complete,
+    created_by: auth.id,
   };
 
   const db = supabaseAdmin();
-  let { data, error } = await db
-    .from("tasks")
-    .insert({
-      ...base,
-      duration_days: duration,
-      percent_complete: complete,
-      created_by: auth.id,
-    })
-    .select(TASK_SELECT)
-    .single();
-
-  if (error) {
-    const fallback = await db
-      .from("tasks")
-      .insert({
-        ...base,
-        duration_days: duration,
-        percent_complete: complete,
-        created_by: auth.id,
-      })
-      .select("*")
-      .single();
-
-    if (!fallback.error && fallback.data) {
-      data = fallback.data;
-      error = null;
-    }
-  }
+  const { data, error } = await db.from("tasks").insert(row).select("id").single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Record creation activity
-  if (data?.id) {
-    await db.from("task_activity").insert({
-      task_id: data.id,
-      user_id: auth.id,
-      action: "created",
-      details: "created the task",
-    });
+  if (!data?.id) {
+    return NextResponse.json({ error: "Task could not be created." }, { status: 500 });
   }
 
-  return NextResponse.json({
-    task: withDefaults(data as Record<string, unknown>),
+  // Fire-and-forget: the activity log must never block the task response.
+  void db.from("task_activity").insert({
+    task_id: data.id,
+    user_id: auth.id,
+    action: "created",
+    details: "created the task",
   });
+
+  try {
+    const task = await fetchTaskById(data.id);
+    return NextResponse.json({ task });
+  } catch {
+    // The row exists; return the plain insert result rather than failing the request.
+    return NextResponse.json({ task: { ...row, id: data.id } });
+  }
 }

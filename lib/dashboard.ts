@@ -32,40 +32,56 @@ type DashboardTaskRow = {
 
 type DashboardProjectRowRecord = { id: string; name: string; status: string };
 
-function normalizeRelation<T>(value: T | T[] | null | undefined): T | null {
-  if (Array.isArray(value)) return value[0] ?? null;
-  return value ?? null;
-}
-
 export async function getDashboardData() {
   const db = supabaseAdmin();
-  const [{ data: tasks, error: tErr }, { data: projects, error: pErr }] = await Promise.all([
-    db
-      .from("tasks")
-      .select(
-        "id, project_id, status, due_date, project:projects!tasks_project_id_fkey(id,name), assignee:users!tasks_assignee_id_fkey(id,name,username)"
-      )
-      .order("created_at", { ascending: false }),
+
+  // Plain selects + explicit lookups: embedded FK-hinted joins are brittle and
+  // were silently falling back to slower paths.
+  const [tasksRes, projectsRes] = await Promise.all([
+    db.from("tasks").select("id, project_id, status, due_date, assignee_id"),
     db.from("projects").select("id, name, status").order("created_at", { ascending: false }),
   ]);
 
-  if (tErr) throw new Error(tErr.message);
-  if (pErr) throw new Error(pErr.message);
+  if (tasksRes.error) throw new Error(tasksRes.error.message);
+  if (projectsRes.error) throw new Error(projectsRes.error.message);
 
-  const allTasks = ((tasks ?? []) as Array<{
+  const taskRows = (tasksRes.data ?? []) as Array<{
     id: string;
     project_id: string | null;
     status: string;
     due_date: string | null;
-    project?: { id: string; name: string } | { id: string; name: string }[] | null;
-    assignee?: { id: string; name: string; username: string } | { id: string; name: string; username: string }[] | null;
-  }>).map((task) => ({
-    ...task,
-    project: normalizeRelation(task.project),
-    assignee: normalizeRelation(task.assignee),
-  })) as DashboardTaskRow[];
+    assignee_id: string | null;
+  }>;
 
-  const allProjects = (projects ?? []) as DashboardProjectRowRecord[];
+  const allProjects = (projectsRes.data ?? []) as DashboardProjectRowRecord[];
+
+  const projectNames = new Map(allProjects.map((p) => [p.id, p.name] as const));
+
+  const assigneeIds = [...new Set(taskRows.map((t) => t.assignee_id).filter((v): v is string => !!v))];
+  const usersRes = assigneeIds.length
+    ? await db.from("users").select("id, name, username").in("id", assigneeIds)
+    : { data: [] as Array<{ id: string; name: string; username: string }> };
+
+  if (usersRes && "error" in usersRes && usersRes.error) {
+    throw new Error((usersRes.error as { message: string }).message);
+  }
+
+  const usersById = new Map(
+    ((usersRes?.data ?? []) as Array<{ id: string; name: string; username: string }>).map(
+      (u) => [u.id, u] as const
+    )
+  );
+
+  const allTasks: DashboardTaskRow[] = taskRows.map((task) => ({
+    id: task.id,
+    project_id: task.project_id,
+    status: task.status,
+    due_date: task.due_date,
+    project: task.project_id
+      ? { id: task.project_id, name: projectNames.get(task.project_id) ?? "Untitled" }
+      : null,
+    assignee: task.assignee_id ? usersById.get(task.assignee_id) ?? null : null,
+  }));
 
   const byStatus: Record<string, number> = { todo: 0, in_progress: 0, blocked: 0, done: 0 };
   const perProject: DashboardBreakdown = {};

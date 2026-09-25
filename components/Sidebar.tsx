@@ -45,14 +45,24 @@ function Icon({ name }: { name: string }) {
 export default function Sidebar({
   user,
   onOpenSearch,
+  onNavigate,
+  className = "",
 }: {
   user: UserPublic;
   onOpenSearch?: () => void;
+  /** Called after any navigation — used to auto-close the mobile drawer. */
+  onNavigate?: () => void;
+  className?: string;
 }) {
   const pathname = usePathname();
   const router = useRouter();
 
+  function go() {
+    onNavigate?.();
+  }
+
   async function logout() {
+    go();
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
     router.refresh();
@@ -61,7 +71,9 @@ export default function Sidebar({
   const initials = (user.name || user.username).slice(0, 2).toUpperCase();
 
   return (
-    <aside className="flex h-screen w-56 flex-none flex-col border-r border-line bg-subtle">
+    <aside
+      className={`flex h-full w-56 flex-none flex-col border-r border-line bg-subtle ${className}`}
+    >
       <div className="flex items-center gap-2 px-4 py-4">
         <div className="flex h-7 w-7 items-center justify-center rounded-md bg-ink text-xs font-semibold text-white">
           L
@@ -72,7 +84,10 @@ export default function Sidebar({
       {onOpenSearch && (
         <button
           type="button"
-          onClick={onOpenSearch}
+          onClick={() => {
+            go();
+            onOpenSearch?.();
+          }}
           className="mx-3 mb-2 flex items-center justify-between rounded-lg border border-line bg-white/80 px-2.5 py-1.5 text-xs text-muted hover:border-ink/20 hover:text-ink transition shadow-2xs"
         >
           <div className="flex items-center gap-1.5">
@@ -93,6 +108,7 @@ export default function Sidebar({
             <Link
               key={item.href}
               href={item.href}
+              onClick={go}
               className={`flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition ${
                 active ? "bg-white font-medium text-ink shadow-card" : "text-muted hover:bg-white/70 hover:text-ink"
               }`}
@@ -107,6 +123,7 @@ export default function Sidebar({
       <div className="border-t border-line p-2">
         <Link
           href="/profile"
+          onClick={go}
           className="flex items-center gap-2.5 rounded-md px-2 py-2 text-sm hover:bg-white/70"
         >
           <div className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-accent text-xs font-semibold text-white">

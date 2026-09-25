@@ -33,21 +33,29 @@ function Card({
 
   return (
     <motion.div
-      layout
       ref={setNodeRef}
       {...listeners}
       {...attributes}
       onClick={() => onEdit(task)}
-      className={`card cursor-grab p-3 active:cursor-grabbing hover:border-accent/60 transition ${isDragging ? "opacity-40" : ""}`}
+      className={`gpu card cursor-grab p-3 active:cursor-grabbing hover:border-accent/60 transition ${
+        isDragging ? "opacity-40" : ""
+      }`}
+      // NOTE: no `layout` prop here on purpose. A per-card layout animation
+      // forces Framer Motion to measure every card on every render, which is
+      // what made dragging stutter on large boards and on mobile.
+      initial={reduceMotion ? false : { opacity: 0, y: 4 }}
+      animate={
+        reduceMotion
+          ? undefined
+          : dropped
+          ? { opacity: 1, y: 0, scale: [1, 1.02, 1] }
+          : { opacity: 1, y: 0 }
+      }
+      exit={reduceMotion ? undefined : { opacity: 0, scale: 0.98 }}
       whileDrag={
         reduceMotion
           ? undefined
           : { scale: 1.02, boxShadow: "0 10px 26px rgba(22, 22, 24, 0.16)", rotate: 0.2 }
-      }
-      animate={
-        dropped && !reduceMotion
-          ? { scale: [1, 1.02, 1], boxShadow: ["0 2px 10px rgba(12,12,13,0.06)", "0 8px 20px rgba(22,22,24,0.14)", "0 2px 10px rgba(12,12,13,0.06)"] }
-          : undefined
       }
       transition={reduceMotion ? { duration: 0 } : motionTransition.fast}
     >
@@ -121,7 +129,6 @@ function Column({
 
   return (
     <motion.div
-      layout
       ref={setNodeRef}
       className={`flex w-72 flex-none flex-col rounded-lg border p-2 transition ${
         isOver ? "border-accent bg-accentSoft/70" : "border-line bg-subtle"
@@ -217,8 +224,8 @@ export default function KanbanBoard({
 
   return (
     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-      <LayoutGroup>
-        <motion.div layout className="flex gap-3 overflow-x-auto pb-4">
+      <div className="scroll-area flex gap-3 overflow-x-auto pb-4">
+        <LayoutGroup>
           {columns.map(({ key, label, color }) => (
             <Column
               key={key}
@@ -230,12 +237,12 @@ export default function KanbanBoard({
               droppedId={droppedId}
             />
           ))}
-        </motion.div>
-      </LayoutGroup>
+        </LayoutGroup>
+      </div>
       <DragOverlay>
         {activeTask && (
           <motion.div
-            className="card w-72 p-3 shadow-pop"
+            className="gpu card w-72 p-3 shadow-pop"
             initial={reduceMotion ? false : fadeScale.initial}
             animate={reduceMotion ? undefined : fadeScale.animate}
             transition={reduceMotion ? { duration: 0 } : motionTransition.fast}

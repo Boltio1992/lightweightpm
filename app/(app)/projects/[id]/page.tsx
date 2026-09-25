@@ -11,7 +11,7 @@ import GanttTimeline from "@/components/GanttTimeline";
 import ProjectMembers from "@/components/ProjectMembers";
 import ProjectSettingsModal from "@/components/ProjectSettingsModal";
 import { ProjectStatusBadge } from "@/components/Badges";
-import { api, fmtDate, isOverdue } from "@/lib/api";
+import { api, fmtDate, isOverdue, onTasksChanged } from "@/lib/api";
 import { nestTasks } from "@/lib/tasks";
 import type { Project, ProjectMember, ProjectStatus, Task, UserPublic } from "@/types";
 
@@ -88,9 +88,28 @@ export default function ProjectDetailPage() {
     }
   }, [projectId]);
 
+  // Task-level mutations (drag, edit, delete) only invalidate the task list.
+  // Refetching project + members + statuses on every drag was the main reason
+  // the board felt sluggish.
+  const loadTasks = useCallback(async () => {
+    try {
+      const tRes = await api<{ tasks: Task[] }>(`/api/tasks?project_id=${projectId}`);
+      const nextTasks = tRes.tasks ?? [];
+      setTasks(nextTasks);
+
+      // Keep an open inspector in sync with the refreshed task.
+      setInspectorTask((prev) => (prev ? nextTasks.find((t) => t.id === prev.id) ?? null : null));
+    } catch {
+      // ignore
+    }
+  }, [projectId]);
+
   useEffect(() => {
     load();
   }, [load]);
+
+  // A task created from the global (⌘K) modal refreshes just this list.
+  useEffect(() => onTasksChanged(loadTasks), [loadTasks]);
 
   const nested = useMemo(() => nestTasks(tasks), [tasks]);
   const assignable: UserPublic[] = useMemo(
@@ -346,7 +365,7 @@ export default function ProjectDetailPage() {
             tasks={tasks}
             projectStatuses={statuses}
             onEdit={handleTaskClick}
-            onChanged={load}
+            onChanged={loadTasks}
           />
         )}
         {tab === "list" && (
@@ -355,7 +374,7 @@ export default function ProjectDetailPage() {
             users={assignable}
             onEdit={handleTaskClick}
             onAddSub={openSubtask}
-            onChanged={load}
+            onChanged={loadTasks}
           />
         )}
         {tab === "timeline" && (
@@ -376,7 +395,7 @@ export default function ProjectDetailPage() {
       <TaskModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        onSaved={load}
+        onSaved={loadTasks}
         task={editingTask}
         projectId={projectId}
         parentTaskId={parentFor}
@@ -393,10 +412,10 @@ export default function ProjectDetailPage() {
           members={members}
           assignableUsers={assignable}
           onClose={() => setInspectorTask(null)}
-          onTaskUpdated={load}
+          onTaskUpdated={loadTasks}
           onTaskDeleted={() => {
             setInspectorTask(null);
-            load();
+            loadTasks();
           }}
         />
       )}
