@@ -5,23 +5,11 @@ import { verifyPassword, createSessionToken, sessionCookieOptions } from "@/lib/
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
-  let username = (body?.username || "").trim().toLowerCase();
-  let password = body?.password || "";
-  const isDemo = Boolean(body?.demo);
+  const username = (body?.username || "").trim().toLowerCase();
+  const password = body?.password || "";
 
-  // If demo request is sent without username, default to admin
-  if (isDemo && !username) {
-    username = "admin";
-  }
-
-  // Alias 'demo' to 'admin' (Alex Rivera)
-  if (username === "demo") {
-    username = "admin";
-    if (!password) password = "password123";
-  }
-
-  if (!username) {
-    return NextResponse.json({ error: "Username is required." }, { status: 400 });
+  if (!username || !password) {
+    return NextResponse.json({ error: "Username and password are required." }, { status: 400 });
   }
 
   const db = supabaseAdmin();
@@ -31,27 +19,12 @@ export async function POST(req: NextRequest) {
     .eq("username", username)
     .maybeSingle();
 
-  if (error || !user) {
+  if (error || !user || !user.password_hash) {
     return NextResponse.json({ error: "Invalid username or password." }, { status: 401 });
   }
 
-  // Known demo accounts
-  const isDemoAccount = ["admin", "jane", "marcus"].includes(user.username);
-  const isAcceptedDemoPassword =
-    password === "password123" ||
-    password === "demo" ||
-    password === "admin" ||
-    password === user.username ||
-    (isDemo && (!password || password.length >= 0));
-
-  let authenticated = false;
-  if (isDemoAccount && isAcceptedDemoPassword) {
-    authenticated = true;
-  } else if (password && user.password_hash) {
-    authenticated = await verifyPassword(password, user.password_hash);
-  }
-
-  if (!authenticated) {
+  const ok = await verifyPassword(password, user.password_hash);
+  if (!ok) {
     return NextResponse.json({ error: "Invalid username or password." }, { status: 401 });
   }
 
@@ -68,7 +41,6 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Set cookie on response for maximum reliability across Next.js runtimes
   response.cookies.set({
     ...cookieOpts,
     value: token,

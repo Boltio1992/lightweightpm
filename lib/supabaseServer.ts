@@ -397,11 +397,7 @@ function createMockClient(): AdminClient {
           return builder;
         },
         eq(column: string, value: any) {
-          if (tableName === "users" && column === "username" && value === "demo") {
-            filters.push((row) => row.username === "demo" || row.username === "admin");
-          } else {
-            filters.push((row) => row[column] === value);
-          }
+          filters.push((row) => row[column] === value);
           return builder;
         },
         is(column: string, value: any) {
@@ -698,3 +694,29 @@ export function supabaseAdmin(): AdminClient {
   cached = createMockClient();
   return cached;
 }
+
+export function clearMockStore(options: { preserveUsers?: boolean; reseed?: boolean } = {}) {
+  const store = (globalThis as any).__lightpm_store;
+  if (!store) return;
+  if (options.reseed) {
+    const fresh = getInitialStore();
+    store.users = fresh.users;
+    store.projects = fresh.projects;
+    store.project_members = fresh.project_members;
+    store.project_statuses = fresh.project_statuses;
+    store.tasks = fresh.tasks;
+    store.task_comments = fresh.task_comments;
+    store.task_activity = fresh.task_activity;
+  } else {
+    store.tasks = [];
+    store.task_comments = [];
+    store.task_activity = [];
+    store.projects = [];
+    store.project_members = [];
+    store.project_statuses = [];
+    if (!options.preserveUsers) {
+      store.users = [];
+    }
+  }
+}
+
