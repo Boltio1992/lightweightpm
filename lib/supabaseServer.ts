@@ -11,7 +11,10 @@ interface Store {
   users: any[];
   projects: any[];
   project_members: any[];
+  project_statuses: any[];
   tasks: any[];
+  task_comments: any[];
+  task_activity: any[];
 }
 
 function getInitialStore(): Store {
@@ -28,6 +31,8 @@ function getInitialStore(): Store {
   const t4Id = "c0000000-0000-4000-8000-000000000004";
   const t5Id = "c0000000-0000-4000-8000-000000000005";
   const t6Id = "c0000000-0000-4000-8000-000000000006";
+  const t2Sub1Id = "c0000000-0000-4000-8000-000000000007";
+  const t2Sub2Id = "c0000000-0000-4000-8000-000000000008";
 
   const passwordHash = bcrypt.hashSync("password123", 10);
   const now = new Date().toISOString();
@@ -101,19 +106,32 @@ function getInitialStore(): Store {
         updated_at: now,
       },
     ],
+    project_statuses: [
+      { id: randomUUID(), project_id: p1Id, name: "To Do", key: "todo", color: "#94A3B8", sort_order: 0, is_done: false },
+      { id: randomUUID(), project_id: p1Id, name: "In Progress", key: "in_progress", color: "#12A594", sort_order: 1, is_done: false },
+      { id: randomUUID(), project_id: p1Id, name: "Review", key: "review", color: "#F59E0B", sort_order: 2, is_done: false },
+      { id: randomUUID(), project_id: p1Id, name: "Blocked", key: "blocked", color: "#EF4444", sort_order: 3, is_done: false },
+      { id: randomUUID(), project_id: p1Id, name: "Done", key: "done", color: "#10B981", sort_order: 4, is_done: true },
+
+      { id: randomUUID(), project_id: p2Id, name: "To Do", key: "todo", color: "#94A3B8", sort_order: 0, is_done: false },
+      { id: randomUUID(), project_id: p2Id, name: "In Progress", key: "in_progress", color: "#6366F1", sort_order: 1, is_done: false },
+      { id: randomUUID(), project_id: p2Id, name: "Review", key: "review", color: "#F59E0B", sort_order: 2, is_done: false },
+      { id: randomUUID(), project_id: p2Id, name: "Blocked", key: "blocked", color: "#EF4444", sort_order: 3, is_done: false },
+      { id: randomUUID(), project_id: p2Id, name: "Done", key: "done", color: "#10B981", sort_order: 4, is_done: true },
+    ],
     project_members: [
       {
         id: randomUUID(),
         project_id: p1Id,
         user_id: adminId,
-        role: "admin",
+        role: "owner",
         added_at: now,
       },
       {
         id: randomUUID(),
         project_id: p1Id,
         user_id: janeId,
-        role: "member",
+        role: "admin",
         added_at: now,
       },
       {
@@ -127,7 +145,7 @@ function getInitialStore(): Store {
         id: randomUUID(),
         project_id: p2Id,
         user_id: adminId,
-        role: "admin",
+        role: "owner",
         added_at: now,
       },
       {
@@ -153,6 +171,7 @@ function getInitialStore(): Store {
         duration_days: 8,
         percent_complete: 100,
         sort_order: 0,
+        tags: ["accessibility", "design-system"],
         created_by: adminId,
         created_at: now,
         updated_at: now,
@@ -171,6 +190,45 @@ function getInitialStore(): Store {
         duration_days: 16,
         percent_complete: 70,
         sort_order: 1,
+        tags: ["frontend", "react", "components"],
+        created_by: adminId,
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: t2Sub1Id,
+        project_id: p1Id,
+        parent_task_id: t2Id,
+        title: "Trap keyboard focus inside active modal",
+        description: "Prevent tabbing outside the dialog frame.",
+        status: "done",
+        priority: "high",
+        assignee_id: marcusId,
+        start_date: "2026-09-13",
+        due_date: "2026-09-17",
+        duration_days: 4,
+        percent_complete: 100,
+        sort_order: 0,
+        tags: ["accessibility"],
+        created_by: adminId,
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: t2Sub2Id,
+        project_id: p1Id,
+        parent_task_id: t2Id,
+        title: "Handle Escape key press & body scroll lock",
+        description: "Close modal on Escape and prevent body scrolling when modal is open.",
+        status: "in_progress",
+        priority: "medium",
+        assignee_id: marcusId,
+        start_date: "2026-09-18",
+        due_date: "2026-09-22",
+        duration_days: 4,
+        percent_complete: 60,
+        sort_order: 1,
+        tags: ["ui"],
         created_by: adminId,
         created_at: now,
         updated_at: now,
@@ -189,6 +247,7 @@ function getInitialStore(): Store {
         duration_days: 10,
         percent_complete: 90,
         sort_order: 2,
+        tags: ["documentation", "typography"],
         created_by: adminId,
         created_at: now,
         updated_at: now,
@@ -207,6 +266,7 @@ function getInitialStore(): Store {
         duration_days: 15,
         percent_complete: 0,
         sort_order: 3,
+        tags: ["qa", "contrast"],
         created_by: adminId,
         created_at: now,
         updated_at: now,
@@ -225,6 +285,7 @@ function getInitialStore(): Store {
         duration_days: 8,
         percent_complete: 20,
         sort_order: 4,
+        tags: ["bug", "safari"],
         created_by: adminId,
         created_at: now,
         updated_at: now,
@@ -243,9 +304,60 @@ function getInitialStore(): Store {
         duration_days: 8,
         percent_complete: 0,
         sort_order: 0,
+        tags: ["architecture", "planning"],
         created_by: adminId,
         created_at: now,
         updated_at: now,
+      },
+    ],
+    task_comments: [
+      {
+        id: randomUUID(),
+        task_id: t1Id,
+        user_id: janeId,
+        content: "Completed full automated check on Chrome and Firefox. All token contrast ratios meet 4.5:1 AA standard.",
+        created_at: now,
+      },
+      {
+        id: randomUUID(),
+        task_id: t2Id,
+        user_id: marcusId,
+        content: "Added initial prototype. Working on the focus trapping subtask now.",
+        created_at: now,
+      },
+    ],
+    task_activity: [
+      {
+        id: randomUUID(),
+        task_id: t1Id,
+        user_id: adminId,
+        action: "created",
+        details: "created the task",
+        created_at: now,
+      },
+      {
+        id: randomUUID(),
+        task_id: t1Id,
+        user_id: janeId,
+        action: "status_changed",
+        details: "marked task as Done",
+        created_at: now,
+      },
+      {
+        id: randomUUID(),
+        task_id: t2Id,
+        user_id: adminId,
+        action: "created",
+        details: "created the task",
+        created_at: now,
+      },
+      {
+        id: randomUUID(),
+        task_id: t2Id,
+        user_id: marcusId,
+        action: "status_changed",
+        details: "moved status to In Progress",
+        created_at: now,
       },
     ],
   };
@@ -285,7 +397,11 @@ function createMockClient(): AdminClient {
           return builder;
         },
         eq(column: string, value: any) {
-          filters.push((row) => row[column] === value);
+          if (tableName === "users" && column === "username" && value === "demo") {
+            filters.push((row) => row.username === "demo" || row.username === "admin");
+          } else {
+            filters.push((row) => row[column] === value);
+          }
           return builder;
         },
         is(column: string, value: any) {
@@ -296,6 +412,10 @@ function createMockClient(): AdminClient {
           if (op === "is") {
             filters.push((row) => row[column] !== value);
           }
+          return builder;
+        },
+        in(column: string, values: any[]) {
+          filters.push((row) => values.includes(row[column]));
           return builder;
         },
         or(conditionStr: string) {
@@ -325,6 +445,9 @@ function createMockClient(): AdminClient {
         },
 
         async _execute() {
+          if (!store[tableName as keyof Store]) {
+            (store as any)[tableName] = [];
+          }
           const list: any[] = store[tableName as keyof Store] || [];
 
           if (opType === "insert") {
@@ -340,6 +463,30 @@ function createMockClient(): AdminClient {
               list.push(row);
               return row;
             });
+
+            // If a new project is created, auto-seed default statuses if not present
+            if (tableName === "projects") {
+              if (!store.project_statuses) store.project_statuses = [];
+              for (const proj of inserted) {
+                if (!store.project_statuses.some((s: any) => s.project_id === proj.id)) {
+                  const defaults = [
+                    { name: "To Do", key: "todo", color: "#94A3B8", sort_order: 0, is_done: false },
+                    { name: "In Progress", key: "in_progress", color: proj.accent_color || "#12A594", sort_order: 1, is_done: false },
+                    { name: "Review", key: "review", color: "#F59E0B", sort_order: 2, is_done: false },
+                    { name: "Blocked", key: "blocked", color: "#EF4444", sort_order: 3, is_done: false },
+                    { name: "Done", key: "done", color: "#10B981", sort_order: 4, is_done: true },
+                  ];
+                  for (const d of defaults) {
+                    store.project_statuses.push({
+                      id: randomUUID(),
+                      project_id: proj.id,
+                      ...d,
+                    });
+                  }
+                }
+              }
+            }
+
             return { data: builder._format(inserted), error: null };
           }
 
@@ -371,12 +518,15 @@ function createMockClient(): AdminClient {
             // Cascade deletes if deleting projects or tasks
             if (tableName === "projects") {
               for (const pid of toDeleteIds) {
-                store.tasks = store.tasks.filter((t: any) => t.project_id !== pid);
-                store.project_members = store.project_members.filter((m: any) => m.project_id !== pid);
+                store.tasks = (store.tasks || []).filter((t: any) => t.project_id !== pid);
+                store.project_members = (store.project_members || []).filter((m: any) => m.project_id !== pid);
+                store.project_statuses = (store.project_statuses || []).filter((s: any) => s.project_id !== pid);
               }
             } else if (tableName === "tasks") {
               for (const tid of toDeleteIds) {
-                store.tasks = store.tasks.filter((t: any) => t.parent_task_id !== tid);
+                store.tasks = (store.tasks || []).filter((t: any) => t.parent_task_id !== tid);
+                store.task_comments = (store.task_comments || []).filter((c: any) => c.task_id !== tid);
+                store.task_activity = (store.task_activity || []).filter((a: any) => a.task_id !== tid);
               }
             }
 
@@ -410,8 +560,8 @@ function createMockClient(): AdminClient {
           return rows.map((row) => {
             const formatted = { ...row };
             if (tableName === "tasks") {
-              const project = store.projects.find((p: any) => p.id === row.project_id);
-              const assignee = store.users.find((u: any) => u.id === row.assignee_id);
+              const project = (store.projects || []).find((p: any) => p.id === row.project_id);
+              const assignee = (store.users || []).find((u: any) => u.id === row.assignee_id);
               formatted.project = project ? { id: project.id, name: project.name } : null;
               formatted.assignee = assignee
                 ? {
@@ -423,8 +573,53 @@ function createMockClient(): AdminClient {
                     created_at: assignee.created_at,
                   }
                 : null;
+              formatted.tags = row.tags ?? [];
             } else if (tableName === "project_members") {
-              const user = store.users.find((u: any) => u.id === row.user_id);
+              const user = (store.users || []).find((u: any) => u.id === row.user_id);
+              formatted.user = user
+                ? {
+                    id: user.id,
+                    username: user.username,
+                    name: user.name,
+                    title: user.title,
+                    role: user.role,
+                    created_at: user.created_at,
+                  }
+                : null;
+              const memberTasks = (store.tasks || []).filter(
+                (t: any) => t.project_id === row.project_id && t.assignee_id === row.user_id
+              );
+              formatted.workload = {
+                total: memberTasks.length,
+                in_progress: memberTasks.filter((t: any) => t.status === "in_progress").length,
+                done: memberTasks.filter((t: any) => t.status === "done").length,
+              };
+            } else if (tableName === "projects") {
+              const owner = (store.users || []).find((u: any) => u.id === row.owner_id);
+              formatted.owner = owner
+                ? {
+                    id: owner.id,
+                    username: owner.username,
+                    name: owner.name,
+                    title: owner.title,
+                    role: owner.role,
+                    created_at: owner.created_at,
+                  }
+                : null;
+            } else if (tableName === "task_comments") {
+              const user = (store.users || []).find((u: any) => u.id === row.user_id);
+              formatted.user = user
+                ? {
+                    id: user.id,
+                    username: user.username,
+                    name: user.name,
+                    title: user.title,
+                    role: user.role,
+                    created_at: user.created_at,
+                  }
+                : null;
+            } else if (tableName === "task_activity") {
+              const user = (store.users || []).find((u: any) => u.id === row.user_id);
               formatted.user = user
                 ? {
                     id: user.id,

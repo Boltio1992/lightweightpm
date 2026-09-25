@@ -42,7 +42,13 @@ function Icon({ name }: { name: string }) {
   }
 }
 
-export default function Sidebar({ user }: { user: UserPublic }) {
+export default function Sidebar({
+  user,
+  onOpenSearch,
+}: {
+  user: UserPublic;
+  onOpenSearch?: () => void;
+}) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -62,6 +68,23 @@ export default function Sidebar({ user }: { user: UserPublic }) {
         </div>
         <span className="text-sm font-semibold text-ink">LightPM</span>
       </div>
+
+      {onOpenSearch && (
+        <button
+          type="button"
+          onClick={onOpenSearch}
+          className="mx-3 mb-2 flex items-center justify-between rounded-lg border border-line bg-white/80 px-2.5 py-1.5 text-xs text-muted hover:border-ink/20 hover:text-ink transition shadow-2xs"
+        >
+          <div className="flex items-center gap-1.5">
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+            <span>Search…</span>
+          </div>
+          <kbd className="rounded border border-line bg-subtle px-1 py-0.2 text-[10px] font-mono text-muted">⌘K</kbd>
+        </button>
+      )}
 
       <nav className="flex-1 space-y-0.5 px-2">
         {NAV.map((item) => {

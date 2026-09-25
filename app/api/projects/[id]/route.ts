@@ -51,6 +51,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (key in body) patch[key] = body[key];
   }
 
+  if (patch.status === "archived" && !patch.archived_at) {
+    patch.archived_at = new Date().toISOString();
+  } else if (patch.status && patch.status !== "archived") {
+    patch.archived_at = null;
+  }
+
   if (patch.name !== undefined && String(patch.name).trim() === "") {
     return NextResponse.json({ error: "Project name is required." }, { status: 400 });
   }

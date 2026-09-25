@@ -18,22 +18,20 @@ async function isValidSession(token: string | undefined) {
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+
+  // Allow public paths (/login, /register) to load without redirection traps
+  if (isPublic) {
+    return NextResponse.next();
+  }
+
   const token = req.cookies.get(COOKIE_NAME)?.value;
   const authed = await isValidSession(token);
 
-  const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
-
-  if (!authed && !isPublic) {
+  if (!authed) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
-  }
-
-  if (authed && isPublic) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/dashboard";
-    url.search = "";
     return NextResponse.redirect(url);
   }
 

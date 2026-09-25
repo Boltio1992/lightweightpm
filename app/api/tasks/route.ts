@@ -3,11 +3,12 @@ import { requireUser } from "@/lib/requireUser";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 
 const TASK_SELECT =
-  "id, project_id, parent_task_id, title, description, status, priority, assignee_id, start_date, due_date, duration_days, percent_complete, sort_order, created_by, created_at, updated_at, assignee:users!tasks_assignee_id_fkey(id, username, name, title, role, created_at), project:projects!tasks_project_id_fkey(id, name)";
+  "id, project_id, parent_task_id, title, description, status, priority, assignee_id, start_date, due_date, duration_days, percent_complete, sort_order, tags, created_by, created_at, updated_at, assignee:users!tasks_assignee_id_fkey(id, username, name, title, role, created_at), project:projects!tasks_project_id_fkey(id, name)";
 
 function withDefaults<T extends Record<string, unknown>>(task: T) {
   return {
     ...task,
+    tags: Array.isArray(task.tags) ? task.tags : [],
     duration_days: task.duration_days ?? null,
     percent_complete: task.percent_complete ?? (task.status === "done" ? 100 : 0),
   };
@@ -83,6 +84,7 @@ export async function POST(req: NextRequest) {
     project_id: body?.project_id ?? null,
     parent_task_id: body?.parent_task_id ?? null,
     sort_order: body?.sort_order ?? 0,
+    tags: Array.isArray(body?.tags) ? body.tags : [],
   };
 
   const { data, error } = await supabaseAdmin()
@@ -91,12 +93,23 @@ export async function POST(req: NextRequest) {
       ...base,
       duration_days: duration,
       percent_complete: complete,
+      created_by: auth.id,
     })
     .select(TASK_SELECT)
     .single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Record creation activity
+  if (data?.id) {
+    await supabaseAdmin().from("task_activity").insert({
+      task_id: data.id,
+      user_id: auth.id,
+      action: "created",
+      details: "created the task",
+    });
   }
 
   return NextResponse.json({

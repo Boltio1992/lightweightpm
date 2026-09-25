@@ -38,7 +38,7 @@ function Card({
       {...listeners}
       {...attributes}
       onClick={() => onEdit(task)}
-      className={`card cursor-grab p-3 active:cursor-grabbing ${isDragging ? "opacity-40" : ""}`}
+      className={`card cursor-grab p-3 active:cursor-grabbing hover:border-accent/60 transition ${isDragging ? "opacity-40" : ""}`}
       whileDrag={
         reduceMotion
           ? undefined
@@ -70,11 +70,16 @@ function Card({
       )}
       
       <div className="flex flex-wrap items-center gap-1.5 mb-2">
-<PriorityBadge priority={task.priority} />
-{task.parent_task_id && <span className="chip bg-subtle text-muted">sub-task</span>}
-{task.duration_days && (
-  <span className="chip bg-blue-100 text-blue-600">{task.duration_days}d</span>
-)}
+        <PriorityBadge priority={task.priority} />
+        {task.parent_task_id && <span className="chip bg-subtle text-muted">sub-task</span>}
+        {task.duration_days && (
+          <span className="chip bg-blue-100 text-blue-600">{task.duration_days}d</span>
+        )}
+        {task.tags && task.tags.map((tag) => (
+          <span key={tag} className="chip bg-subtle text-muted font-normal text-[10px]">
+            #{tag}
+          </span>
+        ))}
       </div>
       
       <div className="mt-2 flex flex-col gap-1 text-xs">
@@ -99,12 +104,14 @@ function Card({
 function Column({
   status,
   label,
+  color,
   tasks,
   onEdit,
   droppedId,
 }: {
-  status: TaskStatus;
+  status: string;
   label: string;
+  color?: string;
   tasks: Task[];
   onEdit: (t: Task) => void;
   droppedId: string | null;
@@ -123,7 +130,10 @@ function Column({
       transition={reduceMotion ? { duration: 0 } : motionTransition.fast}
     >
       <div className="mb-2 flex items-center justify-between px-1 py-1">
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</span>
+        <div className="flex items-center gap-2">
+          {color && <span className="h-2.5 w-2.5 rounded-full flex-none" style={{ backgroundColor: color }} />}
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</span>
+        </div>
         <span className="chip bg-white text-muted">{tasks.length}</span>
       </div>
       <div className="flex min-h-[120px] flex-col gap-2">
@@ -139,10 +149,12 @@ function Column({
 
 export default function KanbanBoard({
   tasks,
+  projectStatuses,
   onEdit,
   onChanged,
 }: {
   tasks: Task[];
+  projectStatuses?: Array<{ id: string; key: string; name: string; color?: string }>;
   onEdit: (t: Task) => void;
   onChanged: () => void;
 }) {
@@ -151,12 +163,16 @@ export default function KanbanBoard({
   const dropTimerRef = useRef<number | null>(null);
   const reduceMotion = useReducedMotion();
   // Local optimistic copy so cards move instantly, before the API round-trip.
-  const [optimistic, setOptimistic] = useState<Record<string, TaskStatus>>({});
+  const [optimistic, setOptimistic] = useState<Record<string, string>>({});
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
-  const resolved = tasks.map((t) => ({ ...t, status: optimistic[t.id] ?? t.status }));
+  const resolved = tasks.map((t) => ({ ...t, status: (optimistic[t.id] ?? t.status) as TaskStatus }));
   const activeTask = resolved.find((t) => t.id === activeId) ?? null;
+
+  const columns = projectStatuses && projectStatuses.length > 0
+    ? projectStatuses.map((s) => ({ key: s.key, label: s.name, color: s.color }))
+    : TASK_STATUSES.map((s) => ({ key: s.key, label: s.label, color: s.color }));
 
   function onDragStart(e: DragStartEvent) {
     setActiveId(String(e.active.id));
@@ -173,7 +189,7 @@ export default function KanbanBoard({
   async function onDragEnd(e: DragEndEvent) {
     setActiveId(null);
     const taskId = String(e.active.id);
-    const newStatus = e.over?.id as TaskStatus | undefined;
+    const newStatus = e.over?.id as string | undefined;
     if (!newStatus) return;
 
     const current = resolved.find((t) => t.id === taskId);
@@ -203,11 +219,12 @@ export default function KanbanBoard({
     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
       <LayoutGroup>
         <motion.div layout className="flex gap-3 overflow-x-auto pb-4">
-          {TASK_STATUSES.map(({ key, label }) => (
+          {columns.map(({ key, label, color }) => (
             <Column
               key={key}
               status={key}
               label={label}
+              color={color}
               tasks={resolved.filter((t) => t.status === key)}
               onEdit={onEdit}
               droppedId={droppedId}

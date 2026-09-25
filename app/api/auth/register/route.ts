@@ -56,7 +56,16 @@ export async function POST(req: NextRequest) {
   }
 
   const token = await createSessionToken(created.id);
-  cookies().set({ ...sessionCookieOptions(), value: token });
+  const cookieOpts = sessionCookieOptions();
+  const response = NextResponse.json({ ok: true });
+  response.cookies.set({
+    ...cookieOpts,
+    value: token,
+  });
 
-  return NextResponse.json({ ok: true });
+  try {
+    cookies().set({ ...cookieOpts, value: token });
+  } catch {}
+
+  return response;
 }

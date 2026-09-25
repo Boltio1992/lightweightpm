@@ -108,29 +108,54 @@ export default function ProjectMembers({
         {members.length === 0 && (
           <p className="px-4 py-8 text-center text-sm text-muted">No members yet.</p>
         )}
-        {members.map((m) => (
-          <div
-            key={m.id}
-            className="group flex items-center gap-3 border-b border-line px-4 py-2.5 last:border-0 hover:bg-subtle"
-          >
-            <div className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-accent text-xs font-semibold text-white">
-              {(m.user?.name || m.user?.username || "?").slice(0, 2).toUpperCase()}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm text-ink">{m.user?.name || m.user?.username}</p>
-              <p className="truncate text-xs text-muted">
-                {m.user?.title || "—"} · {m.role}
-              </p>
-            </div>
-            <span className="hidden text-xs text-muted sm:block">{fmtDate(m.added_at)}</span>
-            <button
-              onClick={() => remove(m.id)}
-              className="flex-none rounded px-1.5 py-0.5 text-xs text-muted opacity-0 transition hover:text-danger group-hover:opacity-100"
+        {members.map((m) => {
+          const workload = m.workload ?? { total: 0, in_progress: 0, done: 0 };
+          return (
+            <div
+              key={m.id}
+              className="group flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3 last:border-0 hover:bg-subtle"
             >
-              Remove
-            </button>
-          </div>
-        ))}
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-accent text-xs font-semibold text-white">
+                  {(m.user?.name || m.user?.username || "?").slice(0, 2).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-ink">{m.user?.name || m.user?.username}</p>
+                  <p className="truncate text-xs text-muted">
+                    {m.user?.title || "Team Member"} · {workload.total} tasks ({workload.in_progress} active)
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <select
+                  value={m.role}
+                  onChange={async (e) => {
+                    const newRole = e.target.value;
+                    await api(`/api/projects/${projectId}/members/${m.id}`, {
+                      method: "PATCH",
+                      json: { role: newRole },
+                    }).catch(() => {});
+                    await load();
+                  }}
+                  className="input py-1 text-xs w-auto font-medium"
+                >
+                  <option value="owner">Owner</option>
+                  <option value="admin">Admin</option>
+                  <option value="member">Member</option>
+                  <option value="viewer">Viewer</option>
+                </select>
+
+                <button
+                  onClick={() => remove(m.id)}
+                  className="flex-none rounded px-2 py-1 text-xs text-muted opacity-60 transition hover:text-danger hover:opacity-100"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       <div className="space-y-5">

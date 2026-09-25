@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/requireUser";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 
-const SELECT = `id, project_id, parent_task_id, title, description, status, priority, assignee_id, start_date, due_date, duration_days, percent_complete, sort_order, created_by, created_at, updated_at, assignee:users!tasks_assignee_id_fkey(id, username, name, title, role, created_at), project:projects(id, name)`;
+const SELECT = `id, project_id, parent_task_id, title, description, status, priority, assignee_id, start_date, due_date, duration_days, percent_complete, sort_order, tags, created_by, created_at, updated_at, assignee:users!tasks_assignee_id_fkey(id, username, name, title, role, created_at), project:projects(id, name)`;
 
 function validPercent(value: unknown) {
   const n = Number(value);
@@ -12,6 +12,7 @@ function validPercent(value: unknown) {
 function withDefaults<T extends Record<string, unknown>>(task: T) {
   return {
     ...task,
+    tags: Array.isArray(task.tags) ? task.tags : [],
     duration_days: task.duration_days ?? null,
     percent_complete: task.percent_complete ?? (task.status === "done" ? 100 : 0),
   };
@@ -36,6 +37,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     "project_id",
     "parent_task_id",
     "sort_order",
+    "tags",
   ]) {
     if (key in (body ?? {})) patch[key] = body[key];
   }
@@ -70,8 +72,39 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   const db = supabaseAdmin();
+  // Fetch current task state before update to compare changes for activity log
+  const { data: currentTask } = await db.from("tasks").select("status, assignee_id, priority, percent_complete, title").eq("id", params.id).single();
+
   const { data, error } = await db.from("tasks").update(patch).eq("id", params.id).select(SELECT).single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Log activity
+  if (currentTask) {
+    if (patch.status && patch.status !== currentTask.status) {
+      await db.from("task_activity").insert({
+        task_id: params.id,
+        user_id: auth.id,
+        action: "status_changed",
+        details: `changed status from ${currentTask.status} to ${patch.status}`,
+      });
+    }
+    if ("assignee_id" in patch && patch.assignee_id !== currentTask.assignee_id) {
+      await db.from("task_activity").insert({
+        task_id: params.id,
+        user_id: auth.id,
+        action: "assigned",
+        details: patch.assignee_id ? "reassigned the task" : "unassigned the task",
+      });
+    }
+    if (patch.priority && patch.priority !== currentTask.priority) {
+      await db.from("task_activity").insert({
+        task_id: params.id,
+        user_id: auth.id,
+        action: "priority_changed",
+        details: `changed priority to ${patch.priority}`,
+      });
+    }
+  }
 
   return NextResponse.json({ task: withDefaults(data as Record<string, unknown>) });
 }

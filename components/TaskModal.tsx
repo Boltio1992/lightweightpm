@@ -3,9 +3,27 @@
 import { useEffect, useState } from "react";
 import Modal from "./Modal";
 import { api, calculateDueDate } from "@/lib/api";
-import type { Task, UserPublic } from "@/types";
+import type { ProjectStatus, Task, UserPublic } from "@/types";
 
-export default function TaskModal({ open, onClose, onSaved, task, projectId, parentTaskId, assignableUsers }: { open: boolean; onClose: () => void; onSaved: () => void; task?: Task | null; projectId?: string | null; parentTaskId?: string | null; assignableUsers: UserPublic[]; }) {
+export default function TaskModal({
+  open,
+  onClose,
+  onSaved,
+  task,
+  projectId,
+  parentTaskId,
+  assignableUsers,
+  projectStatuses = [],
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSaved: () => void;
+  task?: Task | null;
+  projectId?: string | null;
+  parentTaskId?: string | null;
+  assignableUsers: UserPublic[];
+  projectStatuses?: ProjectStatus[];
+}) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("todo");
@@ -15,6 +33,8 @@ export default function TaskModal({ open, onClose, onSaved, task, projectId, par
   const [dueDate, setDueDate] = useState("");
   const [durationDays, setDurationDays] = useState("");
   const [percentComplete, setPercentComplete] = useState("0");
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [calculatedDueDate, setCalculatedDueDate] = useState<string | null>(null);
@@ -29,14 +49,29 @@ export default function TaskModal({ open, onClose, onSaved, task, projectId, par
     setError(null);
     setTitle(task?.title ?? "");
     setDescription(task?.description ?? "");
-    setStatus(task?.status ?? "todo");
+    setStatus(task?.status ?? (projectStatuses.length > 0 ? projectStatuses[0].key : "todo"));
     setPriority(task?.priority ?? "medium");
     setAssigneeId(task?.assignee_id ?? "");
     setStartDate(task?.start_date ?? "");
     setDueDate(task?.due_date ?? "");
     setDurationDays(task?.duration_days == null ? "" : String(task.duration_days));
     setPercentComplete(String(task?.percent_complete ?? 0));
-  }, [open, task]);
+    setTags(task?.tags ?? []);
+    setTagInput("");
+  }, [open, task, projectStatuses]);
+
+  function handleAddTag(e: React.KeyboardEvent | React.MouseEvent) {
+    if ("key" in e && e.key !== "Enter") return;
+    e.preventDefault();
+    const clean = tagInput.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "");
+    if (!clean || tags.includes(clean)) return;
+    setTags([...tags, clean]);
+    setTagInput("");
+  }
+
+  function handleRemoveTag(toRemove: string) {
+    setTags(tags.filter((t) => t !== toRemove));
+  }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -55,6 +90,7 @@ export default function TaskModal({ open, onClose, onSaved, task, projectId, par
       percent_complete: Number(percentComplete),
       project_id: task ? task.project_id : projectId ?? null,
       parent_task_id: task ? task.parent_task_id : parentTaskId ?? null,
+      tags,
     };
 
     try {
@@ -87,11 +123,21 @@ export default function TaskModal({ open, onClose, onSaved, task, projectId, par
           <div>
             <label className="label">Status</label>
             <select className="input" value={status} onChange={(e) => setStatus(e.target.value)}>
-              <option value="todo">To Do</option>
-              <option value="in_progress">In Progress</option>
-              <option value="review">Review</option>
-              <option value="blocked">Blocked</option>
-              <option value="done">Done</option>
+              {projectStatuses.length > 0 ? (
+                projectStatuses.map((s) => (
+                  <option key={s.id} value={s.key}>
+                    {s.name}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="todo">To Do</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="review">Review</option>
+                  <option value="blocked">Blocked</option>
+                  <option value="done">Done</option>
+                </>
+              )}
             </select>
           </div>
           <div>
@@ -116,6 +162,32 @@ export default function TaskModal({ open, onClose, onSaved, task, projectId, par
             ))}
           </select>
         </div>
+
+        {/* Tags */}
+        <div>
+          <label className="label">Tags & Labels</label>
+          <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+            {tags.map((t) => (
+              <span key={t} className="inline-flex items-center gap-1 rounded bg-subtle px-2 py-0.5 text-xs text-ink border border-line">
+                #{t}
+                <button type="button" onClick={() => handleRemoveTag(t)} className="text-muted hover:text-danger">×</button>
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              className="input text-xs py-1"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={handleAddTag}
+              placeholder="Add tag and press Enter…"
+            />
+            <button type="button" onClick={handleAddTag} className="btn text-xs py-1 px-3">
+              Add
+            </button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label">Duration (days)</label>

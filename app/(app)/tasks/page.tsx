@@ -5,6 +5,7 @@ import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "framer-m
 import PageHeader from "@/components/PageHeader";
 import TaskList from "@/components/TaskList";
 import TaskModal from "@/components/TaskModal";
+import TaskInspector from "@/components/TaskInspector";
 import KanbanBoard from "@/components/KanbanBoard";
 import GanttTimeline from "@/components/GanttTimeline";
 import { TaskViewSkeleton } from "@/components/LoadingSkeletons";
@@ -27,12 +28,18 @@ export default function TasksPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Task | null>(null);
   const [parentFor, setParentFor] = useState<string | null>(null);
+  const [inspectorTask, setInspectorTask] = useState<Task | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     const url = scope === "standalone" ? "/api/tasks?standalone=true" : "/api/tasks";
     const data = await api<{ tasks: Task[] }>(url);
-    setTasks(data.tasks ?? []);
+    const loadedTasks = data.tasks ?? [];
+    setTasks(loadedTasks);
+    setInspectorTask((prev) => {
+      if (!prev) return null;
+      return loadedTasks.find((t) => t.id === prev.id) || null;
+    });
     setLoading(false);
   }, [scope]);
 
@@ -52,9 +59,7 @@ export default function TasksPage() {
     setModalOpen(true);
   }
   function openEdit(t: Task) {
-    setEditing(t);
-    setParentFor(null);
-    setModalOpen(true);
+    setInspectorTask(t);
   }
   function openSub(t: Task) {
     setEditing(null);
@@ -168,6 +173,20 @@ export default function TasksPage() {
         parentTaskId={parentFor}
         assignableUsers={users}
       />
+
+      {inspectorTask && (
+        <TaskInspector
+          task={inspectorTask}
+          projectId={inspectorTask.project_id}
+          assignableUsers={users}
+          onClose={() => setInspectorTask(null)}
+          onTaskUpdated={load}
+          onTaskDeleted={() => {
+            setInspectorTask(null);
+            load();
+          }}
+        />
+      )}
     </>
   );
 }
