@@ -15,7 +15,6 @@ export const PROJECT_HEADERS = [
   "Start Date",
   "End Date",
   "Icon",
-  "Accent Color",
   "Default View",
 ];
 
@@ -104,7 +103,6 @@ export const REFERENCE_ROWS: string[][] = [
   ["Projects: Status", PROJECT_STATUSES.join(", ") + " (default: active)"],
   ["Projects: Start/End Date", "YYYY-MM-DD, e.g. 2026-10-01"],
   ["Projects: Icon", PROJECT_ICONS.join(", ") + " (default: folder)"],
-  ["Projects: Accent Color", "Hex color like #3B82F6 (default: #12A594)"],
   ["Projects: Default View", PROJECT_VIEWS.join(", ") + " (default: kanban)"],
   ["Tasks: Title*", "Required."],
   ["Tasks: Project", "Project name. Leave empty for a standalone task (no project)."],

@@ -624,7 +624,7 @@ export default function TaskInspector({
                           <span className="font-semibold text-ink">
                             {c.user?.name || c.user?.username || "Collaborator"}
                           </span>
-                          <span className="text-muted text-[11px]">{fmtDate(c.created_at)}</span>
+                          <span className="text-muted text-xs">{fmtDate(c.created_at)}</span>
                         </div>
                         <p className="text-xs text-ink whitespace-pre-wrap">{c.content}</p>
                       </div>
@@ -668,7 +668,7 @@ export default function TaskInspector({
                           <span className="font-medium text-ink">
                             {a.user?.name || a.user?.username || "Teammate"}
                           </span>
-                          <span className="text-muted text-[11px]">{fmtDate(a.created_at)}</span>
+                          <span className="text-muted text-xs">{fmtDate(a.created_at)}</span>
                         </div>
                         <p className="text-muted">
                           {a.details || a.action.replace(/_/g, " ")}

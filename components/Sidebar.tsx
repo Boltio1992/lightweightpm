@@ -97,7 +97,7 @@ export default function Sidebar({
             </svg>
             <span>Search…</span>
           </div>
-          <kbd className="rounded border border-line bg-subtle px-1 py-0.2 text-[10px] font-mono text-muted">⌘K</kbd>
+          <kbd className="rounded border border-line bg-subtle px-1 py-0.2 text-xs font-mono text-muted">⌘K</kbd>
         </button>
       )}
 

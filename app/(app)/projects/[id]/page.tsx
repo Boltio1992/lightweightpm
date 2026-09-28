@@ -184,7 +184,6 @@ export default function ProjectDetailPage() {
   if (loading) return <div className="page-x py-8 text-sm text-muted">Loading project…</div>;
   if (!project) return <div className="page-x py-8 text-sm text-muted">Project not found.</div>;
 
-  const accent = project.accent_color ?? "#12A594";
   const iconKey = project.icon ?? "folder";
   const isArchived = project.status === "archived";
 
@@ -228,10 +227,7 @@ export default function ProjectDetailPage() {
         <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 max-w-2xl">
             <div className="flex items-center gap-2.5">
-              <span
-                className="flex h-10 w-10 flex-none items-center justify-center rounded-lg text-xl border border-line/40 shadow-xs"
-                style={{ backgroundColor: `${accent}18` }}
-              >
+              <span className="flex h-10 w-10 flex-none items-center justify-center rounded-lg border border-line bg-subtle text-xl">
                 {EMOJI_MAP[iconKey] || "📁"}
               </span>
               <h1 className="truncate text-xl font-bold text-ink">{project.name}</h1>
@@ -381,7 +377,6 @@ export default function ProjectDetailPage() {
         {tab === "list" && (
           <TaskList
             tasks={nested}
-            users={assignable}
             onEdit={handleTaskClick}
             onAddSub={openSubtask}
             onChanged={loadTasks}

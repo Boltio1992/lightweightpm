@@ -148,7 +148,7 @@ export default function AppShell({
             <Link
               key={t.href}
               href={t.href}
-              className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium transition ${
+              className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-xs font-medium transition ${
                 active ? "text-accent" : "text-muted"
               }`}
               style={{ minHeight: 56, paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4px)" }}
@@ -163,7 +163,7 @@ export default function AppShell({
         <button
           type="button"
           onClick={() => setNewTaskModalOpen(true)}
-          className="flex flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold text-accent"
+          className="flex flex-1 flex-col items-center justify-center gap-0.5 text-xs font-semibold text-accent"
           style={{ minHeight: 56, paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4px)" }}
         >
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-lg leading-none text-white">

@@ -15,7 +15,6 @@ export type Project = {
   start_date: string | null;
   end_date: string | null;
   percent_complete: number | null;
-  accent_color: string | null;
   icon: string | null;
   owner_id: string | null;
   owner?: UserPublic | null;

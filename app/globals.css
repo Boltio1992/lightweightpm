@@ -107,6 +107,48 @@ h1, h2, h3, p, span, a, button, label {
     display: none;
   }
 
+  /* Shared column template for the task list header and every row. Header and
+     rows use the exact same grid, so columns cannot drift apart. Columns are
+     switched off (not resized) per breakpoint — keep the cell order in sync
+     with the template: caret, checkbox, title, status+priority, duration,
+     progress, deadline, assignee, actions. */
+  .row-grid {
+    display: grid;
+    align-items: center;
+    column-gap: 12px;
+    /* Phones: caret, checkbox, title, actions. */
+    grid-template-columns: 20px 20px minmax(0, 1fr) auto;
+  }
+  @media (min-width: 640px) {
+    .row-grid {
+      /* + status/priority, deadline. */
+      grid-template-columns: 20px 20px minmax(0, 1fr) 168px 104px 84px;
+    }
+  }
+  @media (min-width: 1024px) {
+    .row-grid {
+      /* + progress. */
+      grid-template-columns: 20px 20px minmax(0, 1fr) 168px 84px 104px 84px;
+    }
+  }
+  @media (min-width: 1280px) {
+    .row-grid {
+      /* + duration, assignee. The sidebar takes 224px from md up, so these two
+         only earn their columns once there is genuinely room for them. */
+      grid-template-columns: 20px 20px minmax(0, 1fr) 168px 52px 84px 104px 124px 84px;
+    }
+  }
+
+  /* Assignee badge — initials stand in for a photo. */
+  .avatar {
+    @apply flex flex-none items-center justify-center rounded-full font-semibold;
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+    background: #e6e4df;
+    color: #37352f;
+  }
+
   /* Snap-scrolling column track (kanban on a phone). Only below sm. */
   @media (max-width: 639px) {
     .snap-x-columns {
@@ -164,7 +206,7 @@ h1, h2, h3, p, span, a, button, label {
     @apply rounded-lg border border-line bg-surface shadow-soft;
   }
   .chip {
-    @apply inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold tracking-wide;
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold tracking-wide;
   }
   .animate-page-in {
     animation: app-fade-in var(--motion-normal) var(--motion-ease-out) both;

@@ -5,21 +5,23 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Semantic colours are tuned for WCAG AA: every value below clears 4.5:1
+        // against white AND against its own soft background. Don't lighten them.
         ink: "#37352f",
-        muted: "#787774",
-        line: "#eaeaea",
+        muted: "#6b6b66",
+        line: "#e6e4df",
         canvas: "#ffffff",
         subtle: "#f7f7f5",
         surface: "#ffffff",
         surfaceMuted: "#fbfbfa",
-        accent: "#2f80ed",
-        accentSoft: "#eef5ff",
-        danger: "#eb5757",
-        dangerSoft: "#fff2f2",
-        warn: "#f2994a",
-        warnSoft: "#fff5ea",
-        good: "#219653",
-        goodSoft: "#edf9f2",
+        accent: "#185fa5",
+        accentSoft: "#e6f1fb",
+        danger: "#c0392b",
+        dangerSoft: "#fcebeb",
+        warn: "#854f0b",
+        warnSoft: "#faeeda",
+        good: "#3b6d11",
+        goodSoft: "#eaf3de",
       },
       fontFamily: {
         sans: [

@@ -216,7 +216,7 @@ export default function TasksPage() {
               transition={reduceMotion ? { duration: 0 } : motionTransition.normal}
             >
               {view === "list" ? (
-                <TaskList tasks={nested} users={users} onEdit={openEdit} onAddSub={openSub} onChanged={load} />
+                <TaskList tasks={nested} onEdit={openEdit} onAddSub={openSub} onChanged={load} />
               ) : view === "kanban" ? (
                 <KanbanBoard tasks={tasks} onEdit={openEdit} onChanged={load} />
               ) : (

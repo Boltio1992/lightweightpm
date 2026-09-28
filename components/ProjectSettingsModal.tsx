@@ -18,19 +18,6 @@ const ICONS = [
   { key: "bookmark", emoji: "🔖", label: "Bookmark" },
 ];
 
-const ACCENTS = [
-  "#12A594",
-  "#3B82F6",
-  "#6366F1",
-  "#8B5CF6",
-  "#EC4899",
-  "#F59E0B",
-  "#EF4444",
-  "#10B981",
-  "#14B8A6",
-  "#475569",
-];
-
 type SettingsTab = "general" | "workflow" | "members" | "danger";
 
 export default function ProjectSettingsModal({
@@ -61,13 +48,13 @@ export default function ProjectSettingsModal({
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [icon, setIcon] = useState("folder");
-  const [accentColor, setAccentColor] = useState("#12A594");
   const [ownerId, setOwnerId] = useState("");
   const [defaultView, setDefaultView] = useState("kanban");
   const [savingGeneral, setSavingGeneral] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
-  // Set when the database is missing columns (accent_color, icon, …) and the
-  // server had to drop them — the chosen value would otherwise vanish silently.
+  // Set when the database is missing a column this form writes (icon,
+  // default_view, …) and the server had to drop it — the chosen value would
+  // otherwise vanish silently.
   const [schemaWarning, setSchemaWarning] = useState<string | null>(null);
 
   // Workflow tab state
@@ -108,18 +95,14 @@ export default function ProjectSettingsModal({
     setStartDate(project.start_date ?? "");
     setEndDate(project.end_date ?? "");
     setIcon(project.icon ?? "folder");
-    setAccentColor(project.accent_color ?? "#12A594");
     setOwnerId(project.owner_id ?? "");
     setDefaultView(project.default_view ?? "kanban");
     setGeneralError(null);
     setWorkflowError(null);
-    // No accent_color on the row at all means the column does not exist in this
-    // database, so picking one here would have nowhere to be stored.
-    setSchemaWarning(
-      project.accent_color === undefined
-        ? "Accent color cannot be saved: this database has no projects.accent_color column. Run supabase/migrations/20260928_project_custom_columns.sql, then reload the PostgREST schema cache."
-        : null
-    );
+    // Set when the database is missing a column the form writes (owner_id,
+    // default_view, …) and the server had to drop it — the chosen value would
+    // otherwise vanish silently.
+    setSchemaWarning(null);
     loadStatuses();
     loadMembers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -187,7 +170,6 @@ export default function ProjectSettingsModal({
             start_date: startDate || null,
             end_date: endDate || null,
             icon,
-            accent_color: accentColor,
             owner_id: ownerId || null,
             default_view: defaultView,
           },
@@ -514,31 +496,6 @@ export default function ProjectSettingsModal({
               </select>
             </div>
 
-            <div>
-              <label className="label">Accent color</label>
-              <div className="flex flex-wrap items-center gap-2">
-                {ACCENTS.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setAccentColor(color)}
-                    className={`h-7 w-7 rounded-md border-2 transition ${
-                      accentColor === color ? "border-ink scale-110 shadow-sm" : "border-transparent"
-                    }`}
-                    style={{ backgroundColor: color }}
-                    aria-label={`Select accent color ${color}`}
-                  />
-                ))}
-                <input
-                  type="color"
-                  value={accentColor}
-                  onChange={(e) => setAccentColor(e.target.value)}
-                  className="h-7 w-7 cursor-pointer rounded-md border border-line bg-transparent p-0"
-                  title="Custom color"
-                />
-              </div>
-            </div>
-
             <div className="md:col-span-2">
               <label className="label">Icon / Emoji</label>
               <div className="flex flex-wrap gap-2">
@@ -604,7 +561,7 @@ export default function ProjectSettingsModal({
                       <p className="text-sm font-medium text-ink flex items-center gap-2">
                         {s.name}
                         {s.is_done && (
-                          <span className="rounded bg-emerald-100 text-emerald-700 px-1.5 py-0.5 text-[10px] font-semibold uppercase">
+                          <span className="rounded bg-emerald-100 text-emerald-700 px-1.5 py-0.5 text-xs font-semibold uppercase">
                             Done Status
                           </span>
                         )}
@@ -721,7 +678,7 @@ export default function ProjectSettingsModal({
                       <p className="truncate text-sm font-medium text-ink flex items-center gap-1.5">
                         {m.user?.name || m.user?.username}
                         {isOwner && (
-                          <span className="rounded bg-amber-100 text-amber-800 px-1.5 py-0.2 text-[10px] font-bold">
+                          <span className="rounded bg-amber-100 text-amber-800 px-1.5 py-0.2 text-xs font-bold">
                             Owner
                           </span>
                         )}

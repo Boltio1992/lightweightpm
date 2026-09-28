@@ -114,7 +114,7 @@ export default function GanttTimeline({
               {ticks.map((t, i) => (
                 <span
                   key={i}
-                  className="absolute top-2 whitespace-nowrap border-l border-line pl-1 text-[10px] text-muted"
+                  className="absolute top-2 whitespace-nowrap border-l border-line pl-1 text-xs text-muted"
                   style={{ left: t.left }}
                 >
                   {t.label}
@@ -127,7 +127,7 @@ export default function GanttTimeline({
                 className="pointer-events-none absolute bottom-0 top-9 z-10 w-px bg-danger/60"
                 style={{ left: todayOffset }}
               >
-                <span className="absolute -top-0 left-1 text-[10px] font-medium text-danger">today</span>
+                <span className="absolute -top-0 left-1 text-xs font-medium text-danger">today</span>
               </div>
             )}
 

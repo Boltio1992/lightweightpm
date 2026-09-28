@@ -79,7 +79,6 @@ function getInitialStore(): Store {
         start_date: "2026-09-01",
         end_date: "2026-10-31",
         percent_complete: 60,
-        accent_color: "#12A594",
         icon: "sparkles",
         owner_id: adminId,
         default_view: "kanban",
@@ -96,7 +95,6 @@ function getInitialStore(): Store {
         start_date: "2026-09-15",
         end_date: "2026-11-20",
         percent_complete: 35,
-        accent_color: "#6366F1",
         icon: "rocket",
         owner_id: adminId,
         default_view: "kanban",
@@ -467,7 +465,7 @@ function createMockClient(): AdminClient {
                 if (!store.project_statuses.some((s: any) => s.project_id === proj.id)) {
                   const defaults = [
                     { name: "To Do", key: "todo", color: "#94A3B8", sort_order: 0, is_done: false },
-                    { name: "In Progress", key: "in_progress", color: proj.accent_color || "#12A594", sort_order: 1, is_done: false },
+                    { name: "In Progress", key: "in_progress", color: "#185fa5", sort_order: 1, is_done: false },
                     { name: "Review", key: "review", color: "#F59E0B", sort_order: 2, is_done: false },
                     { name: "Blocked", key: "blocked", color: "#EF4444", sort_order: 3, is_done: false },
                     { name: "Done", key: "done", color: "#10B981", sort_order: 4, is_done: true },

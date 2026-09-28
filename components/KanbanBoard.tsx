@@ -85,7 +85,7 @@ function Card({
           <span className="chip bg-blue-100 text-blue-600">{task.duration_days}d</span>
         )}
         {task.tags && task.tags.map((tag) => (
-          <span key={tag} className="chip bg-subtle text-muted font-normal text-[10px]">
+          <span key={tag} className="chip bg-subtle text-muted font-normal text-xs">
             #{tag}
           </span>
         ))}

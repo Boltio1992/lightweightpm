@@ -26,7 +26,6 @@ const ICONS = [
   { key: "zap", emoji: "⚡" },
 ];
 
-const ACCENTS = ["#12A594", "#3B82F6", "#6366F1", "#8B5CF6", "#F59E0B", "#EF4444", "#10B981"];
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Row[]>([]);
@@ -42,7 +41,6 @@ export default function ProjectsPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [icon, setIcon] = useState("folder");
-  const [accentColor, setAccentColor] = useState("#12A594");
   const [defaultView, setDefaultView] = useState("kanban");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,7 +82,6 @@ export default function ProjectsPage() {
           start_date: startDate || null,
           end_date: endDate || null,
           icon,
-          accent_color: accentColor,
           default_view: defaultView,
         },
       });
@@ -100,7 +97,6 @@ export default function ProjectsPage() {
       setStartDate("");
       setEndDate("");
       setIcon("folder");
-      setAccentColor("#12A594");
       setOpen(false);
       await load();
     } catch (err: any) {
@@ -177,7 +173,7 @@ export default function ProjectsPage() {
                 >
                   <span>{f.replace("_", " ")}</span>
                   <span
-                    className={`rounded-full px-1.5 py-0.2 text-[10px] ${
+                    className={`rounded-full px-1.5 py-0.2 text-xs ${
                       filter === f ? "bg-white/20 text-white" : "bg-subtle text-muted"
                     }`}
                   >
@@ -218,7 +214,6 @@ export default function ProjectsPage() {
               p.calculated_percent_complete ??
               p.percent_complete ??
               (p.stats.total ? Math.round((p.stats.done / p.stats.total) * 100) : 0);
-            const accent = p.accent_color || "#12A594";
             const iconKey = p.icon || "folder";
 
             const emojiMap: Record<string, string> = {
@@ -242,10 +237,7 @@ export default function ProjectsPage() {
                 <div>
                   <div className="mb-2.5 flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <span
-                        className="flex h-9 w-9 flex-none items-center justify-center rounded-lg text-lg border border-line/40 shadow-xs"
-                        style={{ backgroundColor: `${accent}18` }}
-                      >
+                      <span className="flex h-9 w-9 flex-none items-center justify-center rounded-lg border border-line bg-subtle text-lg">
                         {emojiMap[iconKey] || "📁"}
                       </span>
                       <div className="min-w-0">
@@ -253,7 +245,7 @@ export default function ProjectsPage() {
                           {p.name}
                         </Link>
                         {p.owner && (
-                          <p className="text-[11px] text-muted truncate">
+                          <p className="text-xs text-muted truncate">
                             Owner: {p.owner.name || p.owner.username}
                           </p>
                         )}
@@ -273,8 +265,8 @@ export default function ProjectsPage() {
                     </div>
                     <div className="h-1.5 overflow-hidden rounded-full bg-subtle">
                       <div
-                        className="h-full rounded-full transition-all duration-300"
-                        style={{ width: `${pct}%`, backgroundColor: accent }}
+                        className="h-full rounded-full bg-accent transition-all duration-300"
+                        style={{ width: `${pct}%` }}
                       />
                     </div>
                   </div>
@@ -404,22 +396,6 @@ export default function ProjectsPage() {
               </select>
             </div>
 
-            <div>
-              <label className="label">Accent Color</label>
-              <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                {ACCENTS.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setAccentColor(color)}
-                    className={`tap h-10 w-10 rounded-md border-2 transition sm:h-6 sm:w-6 ${
-                      accentColor === color ? "border-ink scale-110" : "border-transparent"
-                    }`}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
-            </div>
           </div>
 
           <div>

@@ -30,7 +30,6 @@ type ParsedProject = {
   start_date: string | null;
   end_date: string | null;
   icon: string;
-  accent_color: string;
   default_view: string;
 };
 
@@ -186,7 +185,6 @@ export async function POST(req: NextRequest) {
     start_date: ["start date", "start"],
     end_date: ["end date", "end"],
     icon: ["icon"],
-    accent_color: ["accent color", "accent", "color"],
     default_view: ["default view", "view"],
   });
 
@@ -242,12 +240,6 @@ export async function POST(req: NextRequest) {
       icon = "folder";
     }
 
-    let accent = rec.accent_color || "#12A594";
-    if (!/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(accent)) {
-      warnings.push({ sheet: PROJECT_SHEET, row, message: `Invalid accent color "${rec.accent_color}" — using default.` });
-      accent = "#12A594";
-    }
-
     let view = (rec.default_view || "kanban").toLowerCase();
     if (!PROJECT_VIEWS.includes(view)) {
       warnings.push({ sheet: PROJECT_SHEET, row, message: `Unknown view "${rec.default_view}" — using "kanban".` });
@@ -262,7 +254,6 @@ export async function POST(req: NextRequest) {
       start_date: start.date,
       end_date: end.date,
       icon,
-      accent_color: accent,
       default_view: view,
     });
   }
@@ -305,7 +296,6 @@ export async function POST(req: NextRequest) {
         status: p.status,
         start_date: p.start_date,
         end_date: p.end_date,
-        accent_color: p.accent_color,
         icon: p.icon,
         default_view: p.default_view,
         archived_at: p.status === "archived" ? new Date().toISOString() : null,

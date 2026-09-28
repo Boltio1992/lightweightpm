@@ -5,7 +5,31 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { PriorityBadge, StatusBadge } from "./Badges";
 import { api, fmtDate, isOverdue } from "@/lib/api";
 import { fadeUp, motionTransition } from "@/lib/motion";
-import type { Task, UserPublic } from "@/types";
+import type { Task } from "@/types";
+
+/* Turns a due date into something you can act on: "Today", "in 3d", "4d late". */
+function dueLabel(due?: string | null): string | null {
+  if (!due) return null;
+  const target = new Date(`${due.slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(target.getTime())) return fmtDate(due);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const days = Math.round((target.getTime() - today.getTime()) / 86400000);
+  if (days === 0) return "Today";
+  if (days === 1) return "Tomorrow";
+  if (days === -1) return "1d late";
+  if (days < 0) return `${-days}d late`;
+  if (days <= 14) return `in ${days}d`;
+  return fmtDate(due);
+}
+
+function initials(name?: string | null): string {
+  const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  const first = parts[0][0] ?? "";
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
+  return (first + last).toUpperCase();
+}
 
 function Row({
   task,
@@ -25,6 +49,7 @@ function Row({
   const reduceMotion = useReducedMotion();
   const subtasks = task.subtasks ?? [];
   const overdue = isOverdue(task);
+  const due = dueLabel(task.due_date);
 
   async function toggleDone() {
     setBusy(true);
@@ -52,14 +77,16 @@ function Row({
         animate={reduceMotion ? undefined : fadeUp.animate}
         exit={reduceMotion ? undefined : fadeUp.exit}
         transition={reduceMotion ? { duration: 0 } : motionTransition.fast}
-        className="group task-indent flex items-center gap-3 border-b border-line px-4 py-3 hover:bg-subtle sm:py-2.5"
-        style={{ paddingLeft: `calc(1rem + ${depth} * var(--task-indent, 24px))` }}
+        className="row-grid task-indent group border-b border-line px-4 py-2.5 hover:bg-subtle"
       >
+        {/* 1 — expander. Always 20px wide, with or without a caret, so the
+            checkbox beside it never moves sideways. */}
         {subtasks.length > 0 ? (
           <button
             onClick={() => setOpen((v) => !v)}
-            className="tap -ml-1 flex w-6 flex-none items-center justify-center text-muted hover:text-ink"
+            className="tap flex h-5 w-5 items-center justify-center text-muted hover:text-ink"
             aria-label="Toggle sub-tasks"
+            aria-expanded={open}
           >
             <svg
               className={`h-3 w-3 transition ${open ? "rotate-90" : ""}`}
@@ -70,77 +97,103 @@ function Row({
             </svg>
           </button>
         ) : (
-          <span className="w-3 flex-none" />
+          <span aria-hidden="true" />
         )}
 
-        {/* Grows to 22px + a 44px hit area on touch (see globals.css). */}
+        {/* 2 — done checkbox */}
         <input
           type="checkbox"
           checked={task.status === "done"}
           onChange={toggleDone}
           disabled={busy}
-          className="task-check m-0 h-4 w-4 flex-none cursor-pointer rounded border-line accent-accent"
+          className="task-check m-0 h-4 w-4 cursor-pointer rounded border-line accent-accent"
+          aria-label={`Mark "${task.title}" ${task.status === "done" ? "not done" : "done"}`}
         />
 
-        <button
-          onClick={() => onEdit(task)}
-          className={`min-w-0 flex-1 text-left ${
-            task.status === "done" ? "text-muted line-through" : "text-ink"
-          }`}
-        >
-          <span className="block truncate py-1 text-sm">{task.title}</span>
-          {/* Phones: the columns above are hidden, so put the essentials here. */}
-          <span className="flex items-center gap-2 pb-0.5 text-[11px] text-muted sm:hidden">
+        {/* 3 — title. Sub-task indentation lives inside this cell, so every
+            column to the right stays aligned with its header. */}
+        <div className="min-w-0" style={{ paddingLeft: `calc(${depth} * var(--task-indent, 24px))` }}>
+          <button onClick={() => onEdit(task)} className="block w-full min-w-0 text-left">
+            <span
+              className={`block truncate text-sm ${
+                task.status === "done" ? "text-muted line-through" : "font-medium text-ink"
+              }`}
+            >
+              {task.title}
+              {depth > 0 && (
+                <span className="ml-2 hidden text-xs font-normal text-muted xl:inline">sub-task</span>
+              )}
+            </span>
+          </button>
+
+          {/* Phones: the columns to the right are switched off, so the three
+              things worth seeing move under the title. */}
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 sm:hidden">
             <PriorityBadge priority={task.priority} />
             <StatusBadge status={task.status} />
-            <span className={overdue ? "font-medium text-danger" : ""}>{fmtDate(task.due_date)}</span>
-            {depth > 0 && <span>sub-task</span>}
-          </span>
-          {depth > 0 && <span className="ml-2 hidden text-xs text-muted sm:inline">sub-task</span>}
-        </button>
+            {due && (
+              <span
+                className={`text-xs ${
+                  overdue
+                    ? "font-medium text-danger"
+                    : due === "Today"
+                    ? "font-medium text-warn"
+                    : "text-muted"
+                }`}
+              >
+                {due}
+              </span>
+            )}
+          </div>
+        </div>
 
-        <div className="hidden flex-none items-center gap-2 sm:flex">
+        {/* 4 — priority and status, side by side and never the same shape */}
+        <div className="hidden min-w-0 items-center gap-2 sm:flex">
           <PriorityBadge priority={task.priority} />
           <StatusBadge status={task.status} />
         </div>
 
-        {/* Duration display */}
-        <span className="hidden w-16 flex-none text-center text-xs text-muted lg:block">
+        {/* 5 — duration */}
+        <span className="hidden text-center text-xs text-muted xl:block">
           {task.duration_days ? `${task.duration_days}d` : "—"}
         </span>
 
-        {/* Progress indicator */}
-        <div className="hidden w-20 flex-none items-center gap-1 md:flex">
-          {task.percent_complete > 0 ? (
-            <>
-              <div className="h-1 w-10 rounded-full bg-gray-200 overflow-hidden flex-1">
-                <div 
-                  className="h-full bg-accent" 
-                  style={{ width: `${task.percent_complete}%` }}
-                />
-              </div>
-              <span className="text-xs font-medium text-muted w-8 text-right">{task.percent_complete}%</span>
-            </>
-          ) : (
-            <span className="text-xs text-muted">—</span>
-          )}
+        {/* 6 — progress */}
+        <div className="hidden items-center gap-2 lg:flex">
+          <span className="h-1 w-10 flex-none overflow-hidden rounded-full bg-subtle">
+            <span
+              className="block h-full rounded-full bg-accent"
+              style={{ width: `${task.percent_complete ?? 0}%` }}
+            />
+          </span>
+          <span className="w-8 flex-none text-right text-xs text-muted">
+            {task.percent_complete ? `${task.percent_complete}%` : "—"}
+          </span>
         </div>
 
+        {/* 7 — deadline. Overdue and "due today" are the only two states that
+            get colour, so colour always means "act on this". */}
         <span
-          className={`hidden w-28 flex-none text-right text-xs md:block ${
-            overdue ? "font-medium text-danger" : "text-muted"
+          className={`hidden text-right text-xs sm:block ${
+            overdue ? "font-medium text-danger" : due === "Today" ? "font-medium text-warn" : "text-muted"
           }`}
+          title={task.due_date ? fmtDate(task.due_date) : undefined}
         >
-          {fmtDate(task.due_date)}
+          {due ?? "—"}
         </span>
 
-        <span className="hidden w-24 flex-none truncate text-right text-xs text-muted lg:block">
-          {task.assignee?.name || task.assignee?.username || "Unassigned"}
-        </span>
+        {/* 8 — assignee */}
+        <div className="hidden min-w-0 items-center justify-end gap-2 xl:flex">
+          <span className="avatar" aria-hidden="true">
+            {initials(task.assignee?.name || task.assignee?.username)}
+          </span>
+          <span className="min-w-0 truncate text-xs text-ink">
+            {task.assignee?.name || task.assignee?.username || "Unassigned"}
+          </span>
+        </div>
 
-        {/* Always visible on touch — hover-only controls are unreachable with a
-            finger. On desktop they stay hover-revealed to keep rows calm. */}
-        <div className="flex flex-none gap-0.5 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">
+        {/* 9 — row actions. Hover-revealed on desktop, always visible on touch. */}
+        <div className="flex flex-none items-center justify-end gap-0.5 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">
           {depth === 0 && (
             <button
               onClick={() => onAddSub(task)}
@@ -209,38 +262,33 @@ export default function TaskList({
   onChanged,
 }: {
   tasks: Task[];
-  users: UserPublic[];
   onEdit: (t: Task) => void;
   onAddSub: (t: Task) => void;
   onChanged: () => void;
 }) {
-  if (tasks.length === 0) {
-    return (
-      <div className="px-4 py-12 text-center text-sm text-muted">
-        No tasks yet. Create one to get started.
-      </div>
-    );
-  }
-
   return (
     <div className="card overflow-hidden">
-      {/* Column header is meaningless once the columns collapse into cards. */}
-      <div className="hidden items-center gap-3 border-b border-line bg-subtle px-4 py-2 text-xs font-medium text-muted sm:flex">
-        <span className="w-3" />
-        <span className="w-4" />
-        <span className="flex-1">Task</span>
-        <span className="hidden sm:block">Priority / Status</span>
-        <span className="hidden w-16 text-center lg:block">Duration</span>
-        <span className="hidden w-20 md:block">Progress</span>
-        <span className="hidden w-28 text-right md:block">Deadline</span>
-        <span className="hidden w-24 text-right lg:block">Assignee</span>
-        <span className="w-[76px]" />
+      {/* Same .row-grid template as the rows, so every label sits above the
+          column it belongs to instead of approximately near it. */}
+      <div className="row-grid hidden border-b border-line bg-subtle px-4 py-2 text-xs font-medium text-muted sm:grid">
+        <span aria-hidden="true" />
+        <span aria-hidden="true" />
+        <span>Task</span>
+        <span>Priority / status</span>
+        <span className="hidden text-center xl:block">Dur.</span>
+        <span className="hidden lg:block">Progress</span>
+        <span className="text-right">Deadline</span>
+        <span className="hidden text-right xl:block">Assignee</span>
+        <span aria-hidden="true" />
       </div>
       <AnimatePresence initial={false}>
         {tasks.map((t) => (
           <Row key={t.id} task={t} depth={0} onEdit={onEdit} onAddSub={onAddSub} onChanged={onChanged} />
         ))}
       </AnimatePresence>
+      {tasks.length === 0 && (
+        <p className="px-4 py-10 text-center text-sm text-muted">No tasks match this view.</p>
+      )}
     </div>
   );
 }

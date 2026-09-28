@@ -48,7 +48,6 @@ export async function GET() {
     const projectStats = stats[project.id] ?? { total: 0, done: 0, overdue: 0, progressTotal: 0 };
     return {
       ...project,
-      accent_color: project.accent_color ?? "#12A594",
       icon: project.icon ?? "folder",
       default_view: project.default_view ?? "kanban",
       stats: {
@@ -80,7 +79,6 @@ export async function POST(req: NextRequest) {
     start_date: body?.start_date ?? null,
     end_date: body?.end_date ?? null,
     percent_complete: Number(body?.percent_complete ?? 0),
-    accent_color: body?.accent_color ?? "#12A594",
     icon: body?.icon ?? "folder",
     owner_id: body?.owner_id ?? auth.id,
     default_view: body?.default_view ?? "kanban",

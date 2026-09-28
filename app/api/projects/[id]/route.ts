@@ -23,7 +23,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: error.message }, { status: 404 });
   }
 
-  return NextResponse.json({ project: { ...project, accent_color: project.accent_color ?? "#12A594", icon: project.icon ?? "folder", default_view: project.default_view ?? "kanban" } });
+  return NextResponse.json({ project: { ...project, icon: project.icon ?? "folder", default_view: project.default_view ?? "kanban" } });
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -43,7 +43,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     "start_date",
     "end_date",
     "percent_complete",
-    "accent_color",
     "icon",
     "owner_id",
     "default_view",
@@ -72,7 +71,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     patch.percent_complete = value;
   }
 
-  // Columns like accent_color / icon / default_view may not exist in older
+  // Columns like icon / default_view may not exist in older
   // databases; drop them rather than failing the whole edit.
   const result = await updateSkippingMissingColumns<Record<string, any>>(
     "projects",
@@ -93,7 +92,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   return NextResponse.json({
     project: {
       ...data,
-      accent_color: data.accent_color ?? "#12A594",
       icon: data.icon ?? "folder",
       default_view: data.default_view ?? "kanban",
     },

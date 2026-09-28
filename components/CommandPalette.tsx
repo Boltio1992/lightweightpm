@@ -197,7 +197,7 @@ export default function CommandPalette({
             className="w-full bg-transparent text-sm text-ink placeholder:text-muted focus:outline-none"
           />
           {loading && <span className="text-xs text-muted">Searching…</span>}
-          <kbd className="hidden sm:inline-block rounded border border-line bg-white px-1.5 py-0.5 text-[10px] font-mono text-muted">
+          <kbd className="hidden sm:inline-block rounded border border-line bg-white px-1.5 py-0.5 text-xs font-mono text-muted">
             ESC
           </kbd>
         </div>
@@ -207,7 +207,7 @@ export default function CommandPalette({
           {/* Actions */}
           {filteredActions.length > 0 && (
             <div>
-              <p className="px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted">
+              <p className="px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-muted">
                 Quick Actions
               </p>
               <div className="space-y-0.5">
@@ -226,7 +226,7 @@ export default function CommandPalette({
                       }`}
                     >
                       <span className="font-medium">{action.title}</span>
-                      <span className={`text-[10px] ${isSelected ? "text-white/80" : "text-muted"}`}>
+                      <span className={`text-xs ${isSelected ? "text-white/80" : "text-muted"}`}>
                         {action.category}
                       </span>
                     </button>
@@ -239,7 +239,7 @@ export default function CommandPalette({
           {/* Projects */}
           {projects.length > 0 && (
             <div>
-              <p className="px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted">
+              <p className="px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-muted">
                 Projects
               </p>
               <div className="space-y-0.5">
@@ -261,10 +261,6 @@ export default function CommandPalette({
                       }`}
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <span
-                          className="h-2.5 w-2.5 rounded-full flex-none"
-                          style={{ backgroundColor: p.accent_color || "#12A594" }}
-                        />
                         <span className="font-medium truncate">{p.name}</span>
                       </div>
                       <ProjectStatusBadge status={p.status} />
@@ -278,7 +274,7 @@ export default function CommandPalette({
           {/* Tasks */}
           {tasks.length > 0 && (
             <div>
-              <p className="px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted">
+              <p className="px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-muted">
                 Tasks
               </p>
               <div className="space-y-0.5">
@@ -308,7 +304,7 @@ export default function CommandPalette({
                       </div>
                       <div className="flex items-center gap-2 flex-none">
                         <PriorityBadge priority={t.priority} />
-                        <span className={`text-[10px] capitalize ${isSelected ? "text-white/80" : "text-muted"}`}>
+                        <span className={`text-xs capitalize ${isSelected ? "text-white/80" : "text-muted"}`}>
                           {t.status.replace(/_/g, " ")}
                         </span>
                       </div>
@@ -327,7 +323,7 @@ export default function CommandPalette({
         </div>
 
         {/* Footer shortcuts */}
-        <div className="flex items-center justify-between border-t border-line px-4 py-2 bg-subtle/50 text-[11px] text-muted">
+        <div className="flex items-center justify-between border-t border-line px-4 py-2 bg-subtle/50 text-xs text-muted">
           <span>Navigate with <kbd className="font-mono">↑</kbd> <kbd className="font-mono">↓</kbd></span>
           <span>Select with <kbd className="font-mono">Enter</kbd></span>
         </div>

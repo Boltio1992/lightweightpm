@@ -29,7 +29,6 @@ export async function api<T = any>(
  * that into something a person can act on instead of silently losing the value.
  */
 const DROPPED_COLUMN_LABELS: Record<string, string> = {
-  accent_color: "Accent color",
   icon: "Icon",
   default_view: "Default view",
   owner_id: "Owner",
