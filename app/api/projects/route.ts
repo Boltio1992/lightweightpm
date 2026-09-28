@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/requireUser";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 
-const PROJECT_SELECT =
-  "id, name, description, status, start_date, end_date, percent_complete, accent_color, icon, owner_id, default_view, archived_at, created_by, created_at, updated_at";
+// "*" instead of an explicit list: a column that exists in schema.sql but not
+// in the live database would otherwise make PostgREST fail the request with
+// "column projects.<x> does not exist" (PGRST204) and blank out the page.
+const PROJECT_SELECT = "*";
 
 export async function GET() {
   const auth = await requireUser();
@@ -19,21 +21,24 @@ export async function GET() {
 
   const { data: tasks, error: tasksError } = await db
     .from("tasks")
-    .select("id, project_id, status, percent_complete, due_date")
+    .select("id, project_id, status, due_date")
     .not("project_id", "is", null);
 
   if (tasksError) return NextResponse.json({ error: tasksError.message }, { status: 500 });
 
   const stats: Record<string, { total: number; done: number; overdue: number; progressTotal: number }> = {};
 
-  for (const task of tasks ?? []) {
+  // Loosely typed: percent_complete is not selected explicitly, so it may or
+  // may not be present depending on the database's schema version.
+  for (const task of (tasks ?? []) as Array<Record<string, unknown>>) {
     const pid = task.project_id as string;
+    const isDone = task.status === "done";
     stats[pid] ??= { total: 0, done: 0, overdue: 0, progressTotal: 0 };
     stats[pid].total += 1;
-    stats[pid].done += task.status === "done" ? 1 : 0;
-    stats[pid].progressTotal += Number(task.percent_complete ?? (task.status === "done" ? 100 : 0));
+    stats[pid].done += isDone ? 1 : 0;
+    stats[pid].progressTotal += Number(task.percent_complete ?? (isDone ? 100 : 0));
 
-    if (task.status !== "done" && task.due_date && new Date(`${task.due_date}T00:00:00`).getTime() < Date.now()) {
+    if (!isDone && task.due_date && new Date(`${task.due_date}T00:00:00`).getTime() < Date.now()) {
       stats[pid].overdue += 1;
     }
   }

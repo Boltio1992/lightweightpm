@@ -19,6 +19,10 @@ export const dynamic = "force-dynamic";
 const MAX_PROJECT_ROWS = 200;
 const MAX_TASK_ROWS = 1000;
 
+// Newer fields that older databases may not have yet. If an insert fails
+// because of one of them, we retry without them instead of failing the import.
+const OPTIONAL_TASK_COLUMNS = ["tags", "duration_days", "percent_complete"];
+
 type Issue = { sheet: string; row: number; message: string };
 
 type ParsedProject = {
@@ -305,7 +309,8 @@ export async function POST(req: NextRequest) {
           status: p.status,
           start_date: p.start_date,
           end_date: p.end_date,
-          percent_complete: 0,
+          // percent_complete is deliberately omitted: the app derives it from
+          // the tasks, and some databases predate the column.
           accent_color: p.accent_color,
           icon: p.icon,
           default_view: p.default_view,
@@ -505,15 +510,33 @@ export async function POST(req: NextRequest) {
     const CHUNK = 200;
     for (let i = 0; i < tasksToInsert.length; i += CHUNK) {
       const chunk = tasksToInsert.slice(i, i + CHUNK);
-      const { data: inserted, error: insertError } = await db
-        .from("tasks")
-        .insert(chunk)
-        .select("id");
+      let result = await db.from("tasks").insert(chunk).select("id");
 
-      if (insertError) {
+      // A database created before these columns existed (no migration was
+      // shipped with them) rejects the insert outright. Retry once without the
+      // optional fields instead of failing the whole import.
+      if (result.error && /does not exist/.test(result.error.message)) {
+        const stripped = chunk.map((row) => {
+          const copy = { ...row };
+          for (const key of OPTIONAL_TASK_COLUMNS) delete copy[key];
+          return copy;
+        });
+        const retry = await db.from("tasks").insert(stripped).select("id");
+        if (!retry.error) {
+          warnings.push({
+            sheet: TASK_SHEET,
+            row: taskMeta[i]?.row ?? 0,
+            message:
+              "This database is missing the tags / duration_days / percent_complete columns. Tasks were imported without them — run supabase/migrations/20260928_task_tags_duration_progress.sql to enable them.",
+          });
+          result = retry;
+        }
+      }
+
+      if (result.error) {
         return NextResponse.json(
           {
-            error: `Task import failed at rows ${i + 1}–${i + chunk.length}: ${insertError.message}`,
+            error: `Task import failed at rows ${i + 1}–${i + chunk.length}: ${result.error.message}`,
             summary: { projectsCreated, projectsReused, tasksCreated },
             errors,
             warnings,
@@ -521,7 +544,7 @@ export async function POST(req: NextRequest) {
           { status: 500 }
         );
       }
-      for (const row of inserted ?? []) createdTaskIds.push(row.id);
+      for (const row of result.data ?? []) createdTaskIds.push(row.id);
     }
     tasksCreated = createdTaskIds.length;
   }

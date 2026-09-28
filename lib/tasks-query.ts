@@ -13,8 +13,12 @@ import type { Task, UserPublic } from "@/types";
  * Two round-trips maximum, and it cannot fail because of FK naming.
  */
 
-const TASK_COLUMNS =
-  "id, project_id, parent_task_id, title, description, status, priority, assignee_id, start_date, due_date, duration_days, percent_complete, sort_order, tags, created_by, created_at, updated_at";
+// "*" rather than an explicit column list on purpose: naming a column that the
+// live database does not have makes PostgREST fail the whole query (PGRST204,
+// e.g. "column tasks.tags does not exist"). Selecting everything keeps reads
+// working even when the schema drifts from schema.sql, and withDefaults() below
+// fills in the optional fields when they are absent.
+const TASK_COLUMNS = "*";
 
 const USER_COLUMNS = "id, username, name, title, role, created_at";
 
