@@ -6,6 +6,7 @@ import PageHeader from "@/components/PageHeader";
 import TaskList from "@/components/TaskList";
 import TaskModal from "@/components/TaskModal";
 import TaskInspector from "@/components/TaskInspector";
+import ImportModal from "@/components/ImportModal";
 import KanbanBoard from "@/components/KanbanBoard";
 import GanttTimeline from "@/components/GanttTimeline";
 import { TaskViewSkeleton } from "@/components/LoadingSkeletons";
@@ -27,6 +28,7 @@ export default function TasksPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<Task | null>(null);
   const [parentFor, setParentFor] = useState<string | null>(null);
   const [inspectorTask, setInspectorTask] = useState<Task | null>(null);
@@ -87,9 +89,14 @@ export default function TasksPage() {
         title="Tasks"
         subtitle="Standalone tasks live here. Switch scope to see everything."
         actions={
-          <button onClick={openNew} className="btn-primary">
-            New task
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setImportOpen(true)} className="btn">
+              Import
+            </button>
+            <button onClick={openNew} className="btn-primary">
+              New task
+            </button>
+          </div>
         }
       />
 
@@ -229,6 +236,8 @@ export default function TasksPage() {
         parentTaskId={parentFor}
         assignableUsers={users}
       />
+
+      <ImportModal open={importOpen} onClose={() => setImportOpen(false)} onImported={load} />
 
       {inspectorTask && (
         <TaskInspector

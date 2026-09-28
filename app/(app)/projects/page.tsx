@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import Modal from "@/components/Modal";
+import ImportModal from "@/components/ImportModal";
 import ProjectSettingsModal from "@/components/ProjectSettingsModal";
 import { ProjectStatusBadge } from "@/components/Badges";
 import { api, fmtDate } from "@/lib/api";
@@ -31,6 +32,7 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
 
@@ -140,9 +142,14 @@ export default function ProjectsPage() {
         title="Projects"
         subtitle="Manage workspaces, custom workflows, and team initiatives."
         actions={
-          <button onClick={() => setOpen(true)} className="btn-primary">
-            + New project
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setImportOpen(true)} className="btn">
+              Import
+            </button>
+            <button onClick={() => setOpen(true)} className="btn-primary">
+              + New project
+            </button>
+          </div>
         }
       />
       <div className="px-8 py-6">
@@ -424,6 +431,9 @@ export default function ProjectsPage() {
           </div>
         </form>
       </Modal>
+
+      {/* Excel Import Modal */}
+      <ImportModal open={importOpen} onClose={() => setImportOpen(false)} onImported={load} />
 
       {/* Edit Project Settings Modal */}
       {editingProject && (
