@@ -11,31 +11,13 @@ import GanttTimeline from "@/components/GanttTimeline";
 import ProjectMembers from "@/components/ProjectMembers";
 import ProjectSettingsModal from "@/components/ProjectSettingsModal";
 import { ProjectStatusBadge } from "@/components/Badges";
-import { api, fmtDate, isOverdue, onTasksChanged } from "@/lib/api";
+import { api, isOverdue, onTasksChanged } from "@/lib/api";
+import { countdownLabel, fmtDate, initials } from "@/lib/format";
+import { projectEmoji } from "@/lib/projectIcon";
 import { nestTasks } from "@/lib/tasks";
 import type { Project, ProjectMember, ProjectStatus, Task, UserPublic } from "@/types";
 
 type Tab = "list" | "kanban" | "timeline" | "members";
-
-const TABS: { key: Tab; label: string }[] = [
-  { key: "kanban", label: "Kanban" },
-  { key: "list", label: "Tasks" },
-  { key: "timeline", label: "Timeline" },
-  { key: "members", label: "Members" },
-];
-
-const EMOJI_MAP: Record<string, string> = {
-  folder: "📁",
-  rocket: "🚀",
-  chart: "📊",
-  sparkles: "✨",
-  briefcase: "💼",
-  calendar: "📅",
-  target: "🎯",
-  zap: "⚡",
-  heart: "❤️",
-  bookmark: "🔖",
-};
 
 export default function ProjectDetailPage() {
   const params = useParams<{ id: string }>();
@@ -120,10 +102,14 @@ export default function ProjectDetailPage() {
   const stats = useMemo(() => {
     const total = tasks.length;
     const done = tasks.filter((t) => t.status === "done").length;
+    const inProgress = tasks.filter((t) => t.status === "in_progress").length;
+    const blocked = tasks.filter((t) => t.status === "blocked").length;
     const overdue = tasks.filter((t) => isOverdue(t)).length;
     return {
       total,
       done,
+      inProgress,
+      blocked,
       overdue,
       pct: total ? Math.round((done / total) * 100) : 0,
     };
@@ -184,22 +170,31 @@ export default function ProjectDetailPage() {
   if (loading) return <div className="page-x py-8 text-sm text-muted">Loading project…</div>;
   if (!project) return <div className="page-x py-8 text-sm text-muted">Project not found.</div>;
 
-  const iconKey = project.icon ?? "folder";
   const isArchived = project.status === "archived";
+  const ownerName = project.owner?.name || project.owner?.username;
+  const countdown = countdownLabel(project.end_date, project.status);
+  const daysLeft = countdown && /(left|today)$/.test(countdown);
+
+  const TABS: { key: Tab; label: string; count?: number }[] = [
+    { key: "kanban", label: "Kanban", count: stats.total - stats.done },
+    { key: "list", label: "Tasks", count: stats.total },
+    { key: "timeline", label: "Timeline" },
+    { key: "members", label: "Members", count: members.length },
+  ];
 
   return (
     <>
       {/* Archived Notice Banner */}
       {isArchived && (
         <div className="page-x flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/20 bg-amber-500/10 py-2.5">
-          <p className="text-xs text-amber-800 font-medium flex items-center gap-2">
+          <p className="flex items-center gap-2 text-xs font-medium text-amber-800">
             <span>⚠️</span>
             This project is currently archived. Tasks are read-only until restored.
           </p>
           <button
             type="button"
             onClick={toggleArchive}
-            className="rounded bg-amber-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-amber-700 transition"
+            className="rounded bg-amber-600 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-amber-700"
           >
             Restore project
           </button>
@@ -213,11 +208,11 @@ export default function ProjectDetailPage() {
             <span>←</span> Projects
           </Link>
 
-          {/* Quick status badge */}
           <div className="flex items-center gap-2">
-            {project.owner && (
-              <span className="text-xs text-muted">
-                Owner: <strong className="text-ink">{project.owner.name || project.owner.username}</strong>
+            {ownerName && (
+              <span className="hidden items-center gap-1.5 text-xs text-muted sm:flex">
+                <span className="avatar">{initials(ownerName)}</span>
+                {ownerName}
               </span>
             )}
             <ProjectStatusBadge status={project.status} />
@@ -225,41 +220,22 @@ export default function ProjectDetailPage() {
         </div>
 
         <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0 max-w-2xl">
+          <div className="min-w-0 max-w-3xl">
             <div className="flex items-center gap-2.5">
               <span className="flex h-10 w-10 flex-none items-center justify-center rounded-lg border border-line bg-subtle text-xl">
-                {EMOJI_MAP[iconKey] || "📁"}
+                {projectEmoji(project.icon)}
               </span>
               <h1 className="truncate text-xl font-bold text-ink">{project.name}</h1>
             </div>
-
-            <p className="mt-1.5 text-sm text-muted line-clamp-2">
+            <p className="mt-1.5 line-clamp-2 text-sm text-muted">
               {project.description || "No project description provided."}
             </p>
-
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted">
-              <span>
-                {fmtDate(project.start_date)} → {fmtDate(project.end_date) || "No deadline"}
-              </span>
-              <span>·</span>
-              <span>
-                {stats.done}/{stats.total} tasks completed ({stats.pct}%)
-              </span>
-              {stats.overdue > 0 && (
-                <>
-                  <span>·</span>
-                  <span className="text-danger font-medium">{stats.overdue} overdue</span>
-                </>
-              )}
-            </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex flex-none items-center gap-2">
-            <button onClick={openNewTask} className="btn-primary tap hidden sm:inline-flex">
+            <button onClick={openNewTask} className="btn-primary tap">
               + New task
             </button>
-
             <button onClick={() => openSettingsTab("general")} className="btn tap hidden sm:inline-flex">
               Settings
             </button>
@@ -271,19 +247,22 @@ export default function ProjectDetailPage() {
                 onClick={() => setShowActionMenu(!showActionMenu)}
                 className="btn tap px-3"
                 title="More actions"
+                aria-haspopup="menu"
+                aria-expanded={showActionMenu}
               >
                 •••
               </button>
 
               {showActionMenu && (
                 <>
+                  <div className="fixed inset-0 z-20" onClick={() => setShowActionMenu(false)} />
                   <div
-                    className="fixed inset-0 z-20"
-                    onClick={() => setShowActionMenu(false)}
-                  />
-                  <div className="absolute right-0 top-full mt-1 z-30 w-52 rounded-lg border border-line bg-white p-1.5 shadow-xl">
+                    role="menu"
+                    className="absolute right-0 top-full z-30 mt-1 w-52 rounded-lg border border-line bg-white p-1.5 shadow-xl"
+                  >
                     <button
                       type="button"
+                      role="menuitem"
                       onClick={() => openSettingsTab("general")}
                       className="flex w-full items-center gap-2 rounded px-3 py-2.5 text-left text-sm text-ink hover:bg-subtle sm:py-1.5 sm:text-xs"
                     >
@@ -291,6 +270,7 @@ export default function ProjectDetailPage() {
                     </button>
                     <button
                       type="button"
+                      role="menuitem"
                       onClick={() => openSettingsTab("workflow")}
                       className="flex w-full items-center gap-2 rounded px-3 py-2.5 text-left text-sm text-ink hover:bg-subtle sm:py-1.5 sm:text-xs"
                     >
@@ -298,6 +278,7 @@ export default function ProjectDetailPage() {
                     </button>
                     <button
                       type="button"
+                      role="menuitem"
                       onClick={() => openSettingsTab("members")}
                       className="flex w-full items-center gap-2 rounded px-3 py-2.5 text-left text-sm text-ink hover:bg-subtle sm:py-1.5 sm:text-xs"
                     >
@@ -306,6 +287,7 @@ export default function ProjectDetailPage() {
                     <div className="my-1 border-t border-line" />
                     <button
                       type="button"
+                      role="menuitem"
                       onClick={() => {
                         setShowActionMenu(false);
                         toggleArchive();
@@ -316,6 +298,7 @@ export default function ProjectDetailPage() {
                     </button>
                     <button
                       type="button"
+                      role="menuitem"
                       onClick={() => {
                         setShowActionMenu(false);
                         deleteProject();
@@ -331,41 +314,77 @@ export default function ProjectDetailPage() {
           </div>
         </div>
 
-        {/* View Tabs — sideways scrolling on phones so every tab stays reachable. */}
-        <div className="scroll-x mt-4 sm:mt-5">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`-mb-px flex flex-none items-center whitespace-nowrap border-b-2 px-3 text-sm transition sm:px-3 ${
-                tab === t.key
-                  ? "border-ink font-semibold text-ink"
-                  : "border-transparent text-muted hover:text-ink"
-              }`}
-              style={{ minHeight: 46 }}
-            >
-              {t.label}
-              {t.key === "members" && (
-                <span className="ml-1.5 rounded-full bg-subtle px-1.5 py-0.2 text-xs text-muted">
-                  {members.length}
-                </span>
-              )}
-            </button>
-          ))}
+        {/* Health strip — the four numbers that decide what you do next. */}
+        <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
+          <div className="metric">
+            <p className="text-xs font-medium text-muted">Completion</p>
+            <div className="mt-1 flex items-center gap-2">
+              <span className="text-lg font-semibold text-ink">{stats.pct}%</span>
+              <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-subtle">
+                <div
+                  className={`h-full rounded-full ${stats.pct >= 100 ? "bg-good" : "bg-accent"}`}
+                  style={{ width: `${stats.pct}%` }}
+                />
+              </div>
+            </div>
+            <p className="mt-1 text-xs text-muted">
+              {stats.done} of {stats.total} tasks done
+            </p>
+          </div>
+
+          <div className="metric">
+            <p className="text-xs font-medium text-muted">In progress</p>
+            <p className="mt-1 text-lg font-semibold text-ink">{stats.inProgress}</p>
+            <p className="mt-1 text-xs text-muted">
+              {stats.total - stats.done} still open
+              {stats.blocked > 0 && <span className="ml-1 text-danger">· {stats.blocked} blocked</span>}
+            </p>
+          </div>
+
+          <div className="metric">
+            <p className="text-xs font-medium text-muted">Overdue</p>
+            <p className={`mt-1 text-lg font-semibold ${stats.overdue > 0 ? "text-danger" : "text-ink"}`}>
+              {stats.overdue}
+            </p>
+            <p className="mt-1 text-xs text-muted">
+              {stats.overdue > 0 ? "Needs attention today" : "Nothing past due"}
+            </p>
+          </div>
+
+          <div className="metric">
+            <p className="text-xs font-medium text-muted">Deadline</p>
+            <p className={`mt-1 text-lg font-semibold ${countdown && !daysLeft ? "text-danger" : "text-ink"}`}>
+              {project.end_date ? fmtDate(project.end_date, { year: false }) : "—"}
+            </p>
+            <p className={`mt-1 text-xs ${countdown && !daysLeft ? "text-danger" : "text-muted"}`}>
+              {countdown ?? "No target date"}
+            </p>
+          </div>
+        </div>
+
+        {/* View tabs — a segmented control reads as "one of four", not "four links". */}
+        <div className="mt-4 sm:mt-5">
+          <div className="seg" role="tablist" aria-label="Project views">
+            {TABS.map((t) => (
+              <button
+                key={t.key}
+                role="tab"
+                aria-selected={tab === t.key}
+                onClick={() => setTab(t.key)}
+                className={`seg-item ${tab === t.key ? "seg-item-on" : ""}`}
+              >
+                {t.label}
+                {t.count !== undefined && t.count > 0 && (
+                  <span className="ml-1.5 rounded-full bg-subtle px-1.5 text-xs text-muted">{t.count}</span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Main View Area */}
       <div className="page-x py-4 sm:py-6">
-        {/* Phones: the header buttons above are hidden, so repeat them here. */}
-        <div className="mb-3 flex gap-2 sm:hidden">
-          <button onClick={openNewTask} className="btn-primary tap flex-1">
-            + New task
-          </button>
-          <button onClick={() => openSettingsTab("general")} className="btn tap flex-1">
-            Settings
-          </button>
-        </div>
         {tab === "kanban" && (
           <KanbanBoard
             tasks={tasks}
@@ -382,18 +401,8 @@ export default function ProjectDetailPage() {
             onChanged={loadTasks}
           />
         )}
-        {tab === "timeline" && (
-          <GanttTimeline
-            tasks={tasks}
-            onEdit={handleTaskClick}
-          />
-        )}
-        {tab === "members" && (
-          <ProjectMembers
-            projectId={projectId}
-            onChanged={load}
-          />
-        )}
+        {tab === "timeline" && <GanttTimeline tasks={tasks} onEdit={handleTaskClick} />}
+        {tab === "members" && <ProjectMembers projectId={projectId} onChanged={load} />}
       </div>
 
       {/* Task Creation / Full Edit Modal */}

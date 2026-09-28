@@ -25,6 +25,14 @@ export type Project = {
   updated_at: string;
 };
 
+export type ProjectStats = { total: number; done: number; overdue: number };
+
+/** What `GET /api/projects` returns: the project plus its rolled-up task stats. */
+export type ProjectWithStats = Project & {
+  stats: ProjectStats;
+  calculated_percent_complete?: number;
+};
+
 export type ProjectMemberRole = "owner" | "admin" | "member" | "viewer";
 
 export type ProjectMember = {

@@ -4,20 +4,30 @@ import type { TaskPriority, TaskStatus } from "@/types";
    status is a pill with a coloured dot, priority is a flag with a label.
    That way "urgent" can never be mistaken for "blocked". */
 
-const STATUS_STYLE: Record<TaskStatus, { dot: string; chip: string }> = {
-  todo: { dot: "#888780", chip: "bg-subtle text-ink" },
-  in_progress: { dot: "#185fa5", chip: "bg-accentSoft text-accent" },
-  review: { dot: "#854f0b", chip: "bg-warnSoft text-warn" },
-  blocked: { dot: "#c0392b", chip: "bg-dangerSoft text-danger" },
-  done: { dot: "#3b6d11", chip: "bg-goodSoft text-good" },
+/* Single source of truth for status colour — badges, dots and the timeline bars
+   all read the same value, so "blocked" is one red everywhere. */
+export const STATUS_COLOR: Record<TaskStatus, string> = {
+  todo: "#888780",
+  in_progress: "#185fa5",
+  review: "#854f0b",
+  blocked: "#c0392b",
+  done: "#3b6d11",
 };
 
-const STATUS_LABEL: Record<TaskStatus, string> = {
+export const STATUS_LABEL: Record<TaskStatus, string> = {
   todo: "To Do",
   in_progress: "In Progress",
   review: "Review",
   blocked: "Blocked",
   done: "Done",
+};
+
+const STATUS_STYLE: Record<TaskStatus, { dot: string; chip: string }> = {
+  todo: { dot: STATUS_COLOR.todo, chip: "bg-subtle text-ink" },
+  in_progress: { dot: STATUS_COLOR.in_progress, chip: "bg-accentSoft text-accent" },
+  review: { dot: STATUS_COLOR.review, chip: "bg-warnSoft text-warn" },
+  blocked: { dot: STATUS_COLOR.blocked, chip: "bg-dangerSoft text-danger" },
+  done: { dot: STATUS_COLOR.done, chip: "bg-goodSoft text-good" },
 };
 
 export function StatusBadge({ status }: { status: TaskStatus }) {

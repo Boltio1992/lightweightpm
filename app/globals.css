@@ -139,6 +139,51 @@ h1, h2, h3, p, span, a, button, label {
     }
   }
 
+  /* Segmented control — used for view switchers and the timeline zoom. */
+  .seg {
+    @apply inline-flex flex-none items-center gap-0.5 rounded-md border border-line bg-subtle p-0.5;
+  }
+  .seg-item {
+    @apply inline-flex items-center justify-center rounded px-2.5 text-xs font-medium text-muted transition;
+    min-height: 30px;
+  }
+  .seg-item-on {
+    @apply bg-surface text-ink shadow-soft;
+  }
+
+  /* Column template shared by the projects table header and every row.
+     Cell order: name, status, progress, tasks, deadline, owner (lg+), actions. */
+  .proj-grid {
+    display: grid;
+    align-items: center;
+    column-gap: 12px;
+    grid-template-columns: minmax(0, 1fr) 130px 170px 100px 120px 44px;
+  }
+  @media (min-width: 1024px) {
+    .proj-grid {
+      grid-template-columns: minmax(0, 1fr) 130px 170px 100px 120px 150px 44px;
+    }
+  }
+
+  /* Project health rows: name, health, progress, tasks, deadline — with the
+     status column joining in from lg up. */
+  .health-grid {
+    display: grid;
+    align-items: center;
+    column-gap: 12px;
+    grid-template-columns: minmax(0, 1fr) 96px 150px 80px 100px;
+  }
+  @media (min-width: 1024px) {
+    .health-grid {
+      grid-template-columns: minmax(0, 1fr) 120px 110px 180px 90px 110px;
+    }
+  }
+
+  /* Compact metric tile — project header strip and dashboard KPIs. */
+  .metric {
+    @apply rounded-lg border border-line bg-surface px-3 py-2;
+  }
+
   /* Assignee badge — initials stand in for a photo. */
   .avatar {
     @apply flex flex-none items-center justify-center rounded-full font-semibold;

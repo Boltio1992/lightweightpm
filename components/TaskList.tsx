@@ -3,33 +3,10 @@
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { PriorityBadge, StatusBadge } from "./Badges";
-import { api, fmtDate, isOverdue } from "@/lib/api";
+import { api, isOverdue } from "@/lib/api";
+import { dueLabel, fmtDate, initials } from "@/lib/format";
 import { fadeUp, motionTransition } from "@/lib/motion";
 import type { Task } from "@/types";
-
-/* Turns a due date into something you can act on: "Today", "in 3d", "4d late". */
-function dueLabel(due?: string | null): string | null {
-  if (!due) return null;
-  const target = new Date(`${due.slice(0, 10)}T00:00:00`);
-  if (Number.isNaN(target.getTime())) return fmtDate(due);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const days = Math.round((target.getTime() - today.getTime()) / 86400000);
-  if (days === 0) return "Today";
-  if (days === 1) return "Tomorrow";
-  if (days === -1) return "1d late";
-  if (days < 0) return `${-days}d late`;
-  if (days <= 14) return `in ${days}d`;
-  return fmtDate(due);
-}
-
-function initials(name?: string | null): string {
-  const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  const first = parts[0][0] ?? "";
-  const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
-  return (first + last).toUpperCase();
-}
 
 function Row({
   task,

@@ -26,12 +26,13 @@ export default async function DashboardPage() {
     );
   }
 
-  return (
-    <DashboardView
-      summary={data.summary}
-      projects={data.projects}
-      perProject={data.perProject}
-      perAssignee={data.perAssignee}
-    />
-  );
+  // Formatted on the server so the server-rendered HTML and the hydrated
+  // client never disagree about which day it is.
+  const todayLabel = new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+
+  return <DashboardView data={data} todayLabel={todayLabel} />;
 }
