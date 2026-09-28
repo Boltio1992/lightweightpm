@@ -119,7 +119,7 @@ export default function TaskModal({
           <label className="label">Description</label>
           <textarea className="input min-h-[72px] resize-y" value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className="label">Status</label>
             <select className="input" value={status} onChange={(e) => setStatus(e.target.value)}>
@@ -188,7 +188,7 @@ export default function TaskModal({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className="label">Duration (days)</label>
             <input type="number" min="0" step="1" className="input" value={durationDays} onChange={(e) => setDurationDays(e.target.value)} />
@@ -198,7 +198,7 @@ export default function TaskModal({
             <input type="number" min="0" max="100" step="1" className="input" value={percentComplete} onChange={(e) => setPercentComplete(e.target.value)} required />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className="label">Start</label>
             <input type="date" className="input" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
@@ -212,9 +212,10 @@ export default function TaskModal({
           </div>
         </div>
         {error && <p className="text-sm text-danger">{error}</p>}
-        <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={onClose} className="btn">Cancel</button>
-          <button className="btn-primary" disabled={saving}>{saving ? "Saving…" : task ? "Save changes" : "Create task"}</button>
+        {/* Stacked full-width on phones so both are easy to hit with a thumb. */}
+        <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+          <button type="button" onClick={onClose} className="btn tap w-full sm:w-auto">Cancel</button>
+          <button className="btn-primary tap w-full sm:w-auto" disabled={saving}>{saving ? "Saving…" : task ? "Save changes" : "Create task"}</button>
         </div>
       </form>
     </Modal>

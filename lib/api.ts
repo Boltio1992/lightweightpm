@@ -24,6 +24,28 @@ export async function api<T = any>(
 }
 
 /**
+ * Write routes report `droppedColumns` when they had to omit a field because the
+ * database (or PostgREST's schema cache) does not have that column yet. Turn
+ * that into something a person can act on instead of silently losing the value.
+ */
+const DROPPED_COLUMN_LABELS: Record<string, string> = {
+  accent_color: "Accent color",
+  icon: "Icon",
+  default_view: "Default view",
+  owner_id: "Owner",
+  archived_at: "Archive date",
+  percent_complete: "Percent complete",
+  tags: "Tags",
+  duration_days: "Duration",
+};
+
+export function droppedColumnsMessage(cols?: string[] | null): string | null {
+  if (!cols || cols.length === 0) return null;
+  const names = cols.map((c) => DROPPED_COLUMN_LABELS[c] ?? c).join(", ");
+  return `${names} could not be saved — this database has no ${cols.join(", ")} column yet. Run supabase/migrations/20260928_project_custom_columns.sql (and reload the PostgREST schema cache) to enable it.`;
+}
+
+/**
  * Lightweight cross-component invalidation signal.
  *
  * The global "new task" modal lives in the app shell, so it cannot call a

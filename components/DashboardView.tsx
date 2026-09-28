@@ -111,7 +111,7 @@ export default function DashboardView({
   return (
     <>
       <PageHeader title="Dashboard" subtitle="A quick look at everything in flight." />
-      <div className="space-y-6 px-4 py-5 sm:space-y-8 sm:px-8 sm:py-6">
+      <div className="page-x space-y-6 py-5 sm:space-y-8 sm:py-6">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <Stat label="Projects" value={summary.totalProjects} />
           <Stat label="Total tasks" value={summary.totalTasks} />

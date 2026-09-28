@@ -12,6 +12,9 @@
 html,
 body {
   height: 100%;
+  /* Tables, gantt rows and long titles must never push the whole page sideways
+     on a phone — horizontal scrolling belongs to the inner scroll containers. */
+  overflow-x: hidden;
 }
 
 body {
@@ -20,6 +23,11 @@ body {
   line-height: 1.45;
   /* Kill the grey flash iOS/Android paint on tap — makes the UI feel native. */
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Never let a long word blow out the layout on narrow screens. */
+h1, h2, h3, p, span, a, button, label {
+  overflow-wrap: anywhere;
 }
 
 * {
@@ -67,10 +75,76 @@ body {
 }
 
 @layer components {
+  /* Page gutter: roomy on desktop, tight but comfortable on a phone. */
+  .page-x {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Keeps content clear of the mobile bottom tab bar + home indicator. */
+  .pb-nav {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4.5rem);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Sub-task indentation: shallower on phones so titles keep their room. */
+  .task-indent {
+    --task-indent: 24px;
+  }
+  @media (max-width: 639px) {
+    .task-indent {
+      --task-indent: 12px;
+    }
+  }
+
+  /* A row of chips/tabs that scrolls sideways instead of wrapping forever. */
+  .scroll-x {
+    @apply scroll-area -mx-1 flex gap-1 overflow-x-auto px-1;
+    scrollbar-width: none;
+  }
+  .scroll-x::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Snap-scrolling column track (kanban on a phone). Only below sm. */
+  @media (max-width: 639px) {
+    .snap-x-columns {
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+    .snap-column {
+      scroll-snap-align: start;
+    }
+  }
+
   .btn {
     @apply inline-flex items-center justify-center gap-1.5 rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-medium text-ink shadow-soft transition hover:bg-subtle active:scale-[.98] disabled:cursor-wait disabled:opacity-50;
     transition-duration: var(--motion-fast);
     transition-timing-function: var(--motion-ease-out);
+    min-height: 38px;
+  }
+  /* Touch devices get the full 44px recommended hit area. */
+  @media (pointer: coarse) {
+    .btn {
+      min-height: 44px;
+      @apply px-4;
+    }
+    .input,
+    select.input,
+    textarea.input {
+      min-height: 44px;
+      /* >=16px stops iOS Safari from zooming the page on focus. */
+      font-size: 16px;
+    }
+    /* Anything that only reveals itself on hover is invisible to a finger. */
+    .group:hover .group-hover\:opacity-100 {
+      opacity: 1 !important;
+    }
+    input[type="checkbox"].task-check {
+      width: 22px;
+      height: 22px;
+    }
   }
   .btn-primary {
     @apply btn border-accent bg-accent text-white hover:bg-accent/90;

@@ -106,7 +106,7 @@ export default function ImportModal({
               type="button"
               onClick={upload}
               disabled={!file || uploading}
-              className="btn-primary"
+              className="btn-primary tap flex-1 sm:flex-none"
             >
               {uploading ? "Importing…" : "Import"}
             </button>
@@ -156,7 +156,7 @@ export default function ImportModal({
             )}
 
             <div className="flex justify-end border-t border-line pt-3">
-              <button type="button" onClick={onClose} className="btn-primary">
+              <button type="button" onClick={onClose} className="btn-primary tap">
                 Done
               </button>
             </div>

@@ -181,8 +181,8 @@ export default function ProjectDetailPage() {
     }
   }
 
-  if (loading) return <div className="px-8 py-8 text-sm text-muted">Loading project…</div>;
-  if (!project) return <div className="px-8 py-8 text-sm text-muted">Project not found.</div>;
+  if (loading) return <div className="page-x py-8 text-sm text-muted">Loading project…</div>;
+  if (!project) return <div className="page-x py-8 text-sm text-muted">Project not found.</div>;
 
   const accent = project.accent_color ?? "#12A594";
   const iconKey = project.icon ?? "folder";
@@ -192,7 +192,7 @@ export default function ProjectDetailPage() {
     <>
       {/* Archived Notice Banner */}
       {isArchived && (
-        <div className="bg-amber-500/10 border-b border-amber-500/20 px-8 py-2.5 flex items-center justify-between">
+        <div className="page-x flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/20 bg-amber-500/10 py-2.5">
           <p className="text-xs text-amber-800 font-medium flex items-center gap-2">
             <span>⚠️</span>
             This project is currently archived. Tasks are read-only until restored.
@@ -208,9 +208,9 @@ export default function ProjectDetailPage() {
       )}
 
       {/* Project Header */}
-      <div className="border-b border-line px-8 pt-5 bg-white">
-        <div className="flex items-center justify-between">
-          <Link href="/projects" className="text-xs text-muted hover:text-ink flex items-center gap-1">
+      <div className="page-x border-b border-line bg-white pb-0 pt-4 sm:pt-5">
+        <div className="flex items-center justify-between gap-3">
+          <Link href="/projects" className="tap -ml-2 flex items-center gap-1 text-xs text-muted hover:text-ink">
             <span>←</span> Projects
           </Link>
 
@@ -260,11 +260,11 @@ export default function ProjectDetailPage() {
 
           {/* Action Buttons */}
           <div className="flex flex-none items-center gap-2">
-            <button onClick={openNewTask} className="btn-primary">
+            <button onClick={openNewTask} className="btn-primary tap hidden sm:inline-flex">
               + New task
             </button>
 
-            <button onClick={() => openSettingsTab("general")} className="btn">
+            <button onClick={() => openSettingsTab("general")} className="btn tap hidden sm:inline-flex">
               Settings
             </button>
 
@@ -273,7 +273,7 @@ export default function ProjectDetailPage() {
               <button
                 type="button"
                 onClick={() => setShowActionMenu(!showActionMenu)}
-                className="btn px-2.5"
+                className="btn tap px-3"
                 title="More actions"
               >
                 •••
@@ -289,21 +289,21 @@ export default function ProjectDetailPage() {
                     <button
                       type="button"
                       onClick={() => openSettingsTab("general")}
-                      className="flex w-full items-center gap-2 rounded px-2.5 py-1.5 text-left text-xs text-ink hover:bg-subtle"
+                      className="flex w-full items-center gap-2 rounded px-3 py-2.5 text-left text-sm text-ink hover:bg-subtle sm:py-1.5 sm:text-xs"
                     >
                       ✏️ Edit Project Details
                     </button>
                     <button
                       type="button"
                       onClick={() => openSettingsTab("workflow")}
-                      className="flex w-full items-center gap-2 rounded px-2.5 py-1.5 text-left text-xs text-ink hover:bg-subtle"
+                      className="flex w-full items-center gap-2 rounded px-3 py-2.5 text-left text-sm text-ink hover:bg-subtle sm:py-1.5 sm:text-xs"
                     >
                       🔄 Configure Workflow
                     </button>
                     <button
                       type="button"
                       onClick={() => openSettingsTab("members")}
-                      className="flex w-full items-center gap-2 rounded px-2.5 py-1.5 text-left text-xs text-ink hover:bg-subtle"
+                      className="flex w-full items-center gap-2 rounded px-3 py-2.5 text-left text-sm text-ink hover:bg-subtle sm:py-1.5 sm:text-xs"
                     >
                       👥 Manage Members
                     </button>
@@ -314,7 +314,7 @@ export default function ProjectDetailPage() {
                         setShowActionMenu(false);
                         toggleArchive();
                       }}
-                      className="flex w-full items-center gap-2 rounded px-2.5 py-1.5 text-left text-xs text-ink hover:bg-subtle"
+                      className="flex w-full items-center gap-2 rounded px-3 py-2.5 text-left text-sm text-ink hover:bg-subtle sm:py-1.5 sm:text-xs"
                     >
                       📁 {isArchived ? "Restore Project" : "Archive Project"}
                     </button>
@@ -324,7 +324,7 @@ export default function ProjectDetailPage() {
                         setShowActionMenu(false);
                         deleteProject();
                       }}
-                      className="flex w-full items-center gap-2 rounded px-2.5 py-1.5 text-left text-xs text-danger hover:bg-rose-50"
+                      className="flex w-full items-center gap-2 rounded px-3 py-2.5 text-left text-sm text-danger hover:bg-rose-50 sm:py-1.5 sm:text-xs"
                     >
                       🗑️ Delete Project
                     </button>
@@ -335,17 +335,18 @@ export default function ProjectDetailPage() {
           </div>
         </div>
 
-        {/* View Tabs */}
-        <div className="mt-5 flex gap-1">
+        {/* View Tabs — sideways scrolling on phones so every tab stays reachable. */}
+        <div className="scroll-x mt-4 sm:mt-5">
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`-mb-px border-b-2 px-3 py-2 text-sm transition ${
+              className={`-mb-px flex flex-none items-center whitespace-nowrap border-b-2 px-3 text-sm transition sm:px-3 ${
                 tab === t.key
                   ? "border-ink font-semibold text-ink"
                   : "border-transparent text-muted hover:text-ink"
               }`}
+              style={{ minHeight: 46 }}
             >
               {t.label}
               {t.key === "members" && (
@@ -359,7 +360,16 @@ export default function ProjectDetailPage() {
       </div>
 
       {/* Main View Area */}
-      <div className="px-8 py-6">
+      <div className="page-x py-4 sm:py-6">
+        {/* Phones: the header buttons above are hidden, so repeat them here. */}
+        <div className="mb-3 flex gap-2 sm:hidden">
+          <button onClick={openNewTask} className="btn-primary tap flex-1">
+            + New task
+          </button>
+          <button onClick={() => openSettingsTab("general")} className="btn tap flex-1">
+            Settings
+          </button>
+        </div>
         {tab === "kanban" && (
           <KanbanBoard
             tasks={tasks}

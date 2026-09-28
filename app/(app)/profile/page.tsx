@@ -88,7 +88,7 @@ function ProfilePageInner() {
               />
             </div>
             <div className="flex items-center gap-3 pt-1">
-              <button className="btn-primary" disabled={saving}>
+              <button className="btn-primary tap" disabled={saving}>
                 {saving ? "Saving…" : "Save changes"}
               </button>
               {saved && <span className="text-sm text-good">Saved</span>}

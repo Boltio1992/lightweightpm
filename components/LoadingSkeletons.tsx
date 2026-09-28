@@ -15,7 +15,7 @@ export function TaskViewSkeleton() {
 
 export function DashboardSkeleton() {
   return (
-    <div className="space-y-8 px-8 py-6">
+    <div className="page-x space-y-8 py-6">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="card p-4">

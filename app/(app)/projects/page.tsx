@@ -7,7 +7,7 @@ import Modal from "@/components/Modal";
 import ImportModal from "@/components/ImportModal";
 import ProjectSettingsModal from "@/components/ProjectSettingsModal";
 import { ProjectStatusBadge } from "@/components/Badges";
-import { api, fmtDate } from "@/lib/api";
+import { api, droppedColumnsMessage, fmtDate } from "@/lib/api";
 import type { Project } from "@/types";
 
 type Row = Project & {
@@ -46,6 +46,7 @@ export default function ProjectsPage() {
   const [defaultView, setDefaultView] = useState("kanban");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
   // Edit project modal state
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -73,8 +74,9 @@ export default function ProjectsPage() {
     }
     setSaving(true);
     setError(null);
+    setWarning(null);
     try {
-      await api("/api/projects", {
+      const res = await api<{ project?: Record<string, any>; droppedColumns?: string[] }>("/api/projects", {
         method: "POST",
         json: {
           name: trimmedName,
@@ -86,6 +88,13 @@ export default function ProjectsPage() {
           default_view: defaultView,
         },
       });
+      await load();
+      const dropped = droppedColumnsMessage(res?.droppedColumns);
+      if (dropped) {
+        // Keep the modal open so the message is actually seen.
+        setWarning(dropped);
+        return;
+      }
       setName("");
       setDescription("");
       setStartDate("");
@@ -143,26 +152,26 @@ export default function ProjectsPage() {
         subtitle="Manage workspaces, custom workflows, and team initiatives."
         actions={
           <div className="flex items-center gap-2">
-            <button onClick={() => setImportOpen(true)} className="btn">
+            <button onClick={() => setImportOpen(true)} className="btn tap flex-1 sm:flex-none">
               Import
             </button>
-            <button onClick={() => setOpen(true)} className="btn-primary">
+            <button onClick={() => setOpen(true)} className="btn-primary tap flex-1 sm:flex-none">
               + New project
             </button>
           </div>
         }
       />
-      <div className="px-8 py-6">
+      <div className="page-x py-5 sm:py-6">
         {/* Filter and Search Bar */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-1">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 sm:mb-6">
+          <div className="scroll-x">
             {["all", "active", "on_hold", "done", "archived"].map((f) => {
               const count = f === "all" ? projects.length : projects.filter((p) => p.status === f).length;
               return (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
-                  className={`rounded-md px-2.5 py-1 text-xs font-medium capitalize transition flex items-center gap-1.5 ${
+                  className={`flex flex-none items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium capitalize transition sm:px-2.5 sm:py-1 ${
                     filter === f ? "bg-ink text-white" : "text-muted hover:bg-subtle"
                   }`}
                 >
@@ -288,11 +297,11 @@ export default function ProjectsPage() {
                     View project →
                   </Link>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex flex-none items-center gap-0.5">
                     <button
                       type="button"
                       onClick={() => setEditingProject(p)}
-                      className="rounded p-1 text-xs text-muted hover:text-ink hover:bg-subtle"
+                      className="tap rounded px-2 text-xs text-muted hover:text-ink hover:bg-subtle"
                       title="Project Settings"
                     >
                       Settings
@@ -300,14 +309,14 @@ export default function ProjectsPage() {
                     <button
                       type="button"
                       onClick={() => toggleArchive(p)}
-                      className="rounded p-1 text-xs text-muted hover:text-ink hover:bg-subtle"
+                      className="tap rounded px-2 text-xs text-muted hover:text-ink hover:bg-subtle"
                     >
                       {p.status === "archived" ? "Restore" : "Archive"}
                     </button>
                     <button
                       type="button"
                       onClick={() => deleteProject(p)}
-                      className="rounded p-1 text-xs text-muted hover:text-danger hover:bg-rose-50"
+                      className="tap rounded px-2 text-xs text-muted hover:text-danger hover:bg-rose-50"
                       title="Delete project"
                     >
                       Delete
@@ -323,6 +332,20 @@ export default function ProjectsPage() {
       {/* New Project Modal */}
       <Modal open={open} onClose={() => setOpen(false)} title="Create New Project" width="max-w-xl">
         <form onSubmit={create} className="space-y-4">
+          {warning && (
+            <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5">
+              <span className="text-sm leading-none">⚠️</span>
+              <p className="flex-1 text-xs leading-relaxed text-amber-900">{warning}</p>
+              <button
+                type="button"
+                onClick={() => setWarning(null)}
+                className="tap -my-1 px-1 text-amber-700 hover:text-amber-900"
+                aria-label="Dismiss warning"
+              >
+                ✕
+              </button>
+            </div>
+          )}
           <div>
             <label className="label">Project name</label>
             <input
@@ -345,7 +368,7 @@ export default function ProjectsPage() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="label">Start date</label>
               <input
@@ -366,7 +389,7 @@ export default function ProjectsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="label">Default View</label>
               <select
@@ -389,7 +412,7 @@ export default function ProjectsPage() {
                     key={color}
                     type="button"
                     onClick={() => setAccentColor(color)}
-                    className={`h-6 w-6 rounded-md border-2 transition ${
+                    className={`tap h-10 w-10 rounded-md border-2 transition sm:h-6 sm:w-6 ${
                       accentColor === color ? "border-ink scale-110" : "border-transparent"
                     }`}
                     style={{ backgroundColor: color }}
@@ -407,7 +430,7 @@ export default function ProjectsPage() {
                   key={item.key}
                   type="button"
                   onClick={() => setIcon(item.key)}
-                  className={`flex h-9 w-9 items-center justify-center rounded-lg border text-base transition ${
+                  className={`flex h-11 w-11 items-center justify-center rounded-lg border text-lg transition sm:h-9 sm:w-9 sm:text-base ${
                     icon === item.key
                       ? "border-ink bg-subtle scale-105"
                       : "border-line bg-white hover:bg-subtle text-muted"
@@ -421,11 +444,11 @@ export default function ProjectsPage() {
 
           {error && <p className="text-sm text-danger">{error}</p>}
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-line">
-            <button type="button" onClick={() => setOpen(false)} className="btn">
+          <div className="flex flex-col-reverse gap-2 border-t border-line pt-3 sm:flex-row sm:justify-end">
+            <button type="button" onClick={() => setOpen(false)} className="btn tap w-full sm:w-auto">
               Cancel
             </button>
-            <button className="btn-primary" disabled={saving}>
+            <button className="btn-primary tap w-full sm:w-auto" disabled={saving}>
               {saving ? "Creating…" : "Create Project"}
             </button>
           </div>

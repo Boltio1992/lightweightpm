@@ -270,7 +270,7 @@ export default function TaskInspector({
           className="relative flex h-full w-full max-w-xl flex-col bg-white shadow-2xl"
         >
           {/* Top Bar */}
-          <div className="flex items-center justify-between border-b border-line px-6 py-3.5 bg-subtle/50">
+          <div className="safe-bottom flex items-center justify-between border-b border-line bg-subtle/50 px-4 py-3 sm:px-6 sm:py-3.5">
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted font-mono">
                 {task.parent_task_id ? "Sub-Task" : "Task Inspector"}
@@ -286,7 +286,7 @@ export default function TaskInspector({
               <button
                 type="button"
                 onClick={deleteTask}
-                className="text-xs text-muted hover:text-danger p-1 rounded"
+                className="tap rounded px-2 text-xs text-muted hover:text-danger"
                 title="Delete task"
               >
                 Delete
@@ -294,7 +294,7 @@ export default function TaskInspector({
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-md p-1 text-muted hover:bg-subtle hover:text-ink transition"
+                className="tap rounded-md px-2 text-muted hover:bg-subtle hover:text-ink transition"
                 aria-label="Close inspector"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -305,7 +305,7 @@ export default function TaskInspector({
           </div>
 
           {/* Quick Header Controls */}
-          <div className="flex flex-wrap items-center gap-3 border-b border-line px-6 py-3 bg-white">
+          <div className="flex flex-wrap items-center gap-3 border-b border-line bg-white px-4 py-3 sm:px-6">
             {/* Status Select */}
             <div className="flex items-center gap-1.5">
               <span className="h-3 w-3 rounded-full flex-none" style={{ backgroundColor: statusColor }} />
@@ -378,35 +378,38 @@ export default function TaskInspector({
           </div>
 
           {/* Tab Navigation */}
-          <div className="flex border-b border-line px-6 bg-white">
+          <div className="scroll-x border-b border-line bg-white px-4 sm:px-6">
             <button
               onClick={() => setActiveTab("details")}
-              className={`px-3 py-2 text-xs font-semibold border-b-2 transition ${
+              className={`flex flex-none items-center whitespace-nowrap border-b-2 px-3 text-xs font-semibold transition ${
                 activeTab === "details" ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"
               }`}
+              style={{ minHeight: 46 }}
             >
               Task Details
             </button>
             <button
               onClick={() => setActiveTab("comments")}
-              className={`px-3 py-2 text-xs font-semibold border-b-2 transition ${
+              className={`flex flex-none items-center whitespace-nowrap border-b-2 px-3 text-xs font-semibold transition ${
                 activeTab === "comments" ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"
               }`}
+              style={{ minHeight: 46 }}
             >
               Comments ({comments.length})
             </button>
             <button
               onClick={() => setActiveTab("activity")}
-              className={`px-3 py-2 text-xs font-semibold border-b-2 transition ${
+              className={`flex flex-none items-center whitespace-nowrap border-b-2 px-3 text-xs font-semibold transition ${
                 activeTab === "activity" ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"
               }`}
+              style={{ minHeight: 46 }}
             >
               Activity Log ({activities.length})
             </button>
           </div>
 
           {/* Scrollable Content Body */}
-          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+          <div className="scroll-area flex-1 space-y-6 overflow-y-auto px-4 py-5 sm:px-6">
             {activeTab === "details" && (
               <>
                 {/* Editable Title */}
@@ -460,7 +463,7 @@ export default function TaskInspector({
                 </div>
 
                 {/* Date Fields & Duration */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <label className="label">Start date</label>
                     <input
@@ -679,7 +682,7 @@ export default function TaskInspector({
           </div>
 
           {/* Footer Save Button */}
-          <div className="border-t border-line px-6 py-3 bg-subtle/50 flex items-center justify-between">
+          <div className="safe-bottom flex items-center justify-between border-t border-line bg-subtle/50 px-4 py-3 sm:px-6">
             <span className="text-xs text-muted">
               {saving ? "Saving changes…" : "Auto-saving on blur"}
             </span>

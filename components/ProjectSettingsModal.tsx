@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Modal from "./Modal";
-import { api } from "@/lib/api";
+import { api, droppedColumnsMessage } from "@/lib/api";
 import type { Project, ProjectMember, ProjectMemberRole, ProjectStatus, UserPublic } from "@/types";
 
 const ICONS = [
@@ -66,6 +66,9 @@ export default function ProjectSettingsModal({
   const [defaultView, setDefaultView] = useState("kanban");
   const [savingGeneral, setSavingGeneral] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
+  // Set when the database is missing columns (accent_color, icon, …) and the
+  // server had to drop them — the chosen value would otherwise vanish silently.
+  const [schemaWarning, setSchemaWarning] = useState<string | null>(null);
 
   // Workflow tab state
   const [statuses, setStatuses] = useState<ProjectStatus[]>([]);
@@ -110,6 +113,13 @@ export default function ProjectSettingsModal({
     setDefaultView(project.default_view ?? "kanban");
     setGeneralError(null);
     setWorkflowError(null);
+    // No accent_color on the row at all means the column does not exist in this
+    // database, so picking one here would have nowhere to be stored.
+    setSchemaWarning(
+      project.accent_color === undefined
+        ? "Accent color cannot be saved: this database has no projects.accent_color column. Run supabase/migrations/20260928_project_custom_columns.sql, then reload the PostgREST schema cache."
+        : null
+    );
     loadStatuses();
     loadMembers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -166,20 +176,29 @@ export default function ProjectSettingsModal({
     setGeneralError(null);
 
     try {
-      await api(`/api/projects/${project.id}`, {
-        method: "PATCH",
-        json: {
-          name: name.trim(),
-          description,
-          status,
-          start_date: startDate || null,
-          end_date: endDate || null,
-          icon,
-          accent_color: accentColor,
-          owner_id: ownerId || null,
-          default_view: defaultView,
-        },
-      });
+      const res = await api<{ project?: Record<string, any>; droppedColumns?: string[] }>(
+        `/api/projects/${project.id}`,
+        {
+          method: "PATCH",
+          json: {
+            name: name.trim(),
+            description,
+            status,
+            start_date: startDate || null,
+            end_date: endDate || null,
+            icon,
+            accent_color: accentColor,
+            owner_id: ownerId || null,
+            default_view: defaultView,
+          },
+        }
+      );
+      const warning = droppedColumnsMessage(res?.droppedColumns);
+      if (warning) {
+        setSchemaWarning(warning);
+        await onSaved();
+        return;
+      }
       await onSaved();
       onClose();
     } catch (err: any) {
@@ -407,6 +426,20 @@ export default function ProjectSettingsModal({
       {/* TAB 1: GENERAL */}
       {tab === "general" && (
         <form onSubmit={saveGeneral} className="space-y-4">
+          {schemaWarning && (
+            <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5">
+              <span className="text-sm leading-none">⚠️</span>
+              <p className="flex-1 text-xs leading-relaxed text-amber-900">{schemaWarning}</p>
+              <button
+                type="button"
+                onClick={() => setSchemaWarning(null)}
+                className="tap -my-1 -mr-1 px-1 text-amber-700 hover:text-amber-900"
+                aria-label="Dismiss warning"
+              >
+                ✕
+              </button>
+            </div>
+          )}
           <div className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
               <label className="label">Project name</label>
@@ -530,11 +563,11 @@ export default function ProjectSettingsModal({
 
           {generalError && <p className="text-sm text-danger">{generalError}</p>}
 
-          <div className="flex justify-end gap-2 border-t border-line pt-3">
-            <button type="button" onClick={onClose} className="btn">
+          <div className="flex flex-col-reverse gap-2 border-t border-line pt-3 sm:flex-row sm:justify-end">
+            <button type="button" onClick={onClose} className="btn tap w-full sm:w-auto">
               Cancel
             </button>
-            <button type="submit" className="btn-primary" disabled={savingGeneral}>
+            <button type="submit" className="btn-primary tap w-full sm:w-auto" disabled={savingGeneral}>
               {savingGeneral ? "Saving…" : "Save changes"}
             </button>
           </div>

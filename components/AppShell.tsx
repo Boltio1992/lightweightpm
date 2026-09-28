@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Sidebar from "@/components/Sidebar";
@@ -17,6 +18,13 @@ export default function AppShell({
   user: UserPublic;
   children: React.ReactNode;
 }) {
+  // Primary destinations for the mobile tab bar — everything else lives in the
+  // drawer, which needs a second hand to reach on a big phone.
+  const MOBILE_TABS = [
+    { href: "/dashboard", label: "Home", icon: "M4 11.5 12 4l8 7.5M6.5 10v9h11v-9" },
+    { href: "/projects", label: "Projects", icon: "M4 7h16M4 12h16M4 17h10" },
+    { href: "/tasks", label: "Tasks", icon: "M5 6h14M5 12h14M5 18h9" },
+  ];
   const pathname = usePathname();
   const reduceMotion = useReducedMotion();
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
@@ -88,7 +96,7 @@ export default function AppShell({
           </button>
         </header>
 
-        <main className="scroll-area h-full flex-1 overflow-y-auto">
+        <main className="scroll-area h-full flex-1 overflow-y-auto pb-nav lg:pb-0">
           {/* Keyed on the route so each page fades in on navigation. */}
           <motion.div
             key={pathname}
@@ -131,6 +139,39 @@ export default function AppShell({
           </>
         )}
       </AnimatePresence>
+
+      {/* Mobile tab bar — thumb-reachable primary navigation. */}
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-line bg-white/95 backdrop-blur md:hidden">
+        {MOBILE_TABS.map((t) => {
+          const active = pathname === t.href || pathname.startsWith(`${t.href}/`);
+          return (
+            <Link
+              key={t.href}
+              href={t.href}
+              className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium transition ${
+                active ? "text-accent" : "text-muted"
+              }`}
+              style={{ minHeight: 56, paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4px)" }}
+            >
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d={t.icon} strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {t.label}
+            </Link>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => setNewTaskModalOpen(true)}
+          className="flex flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold text-accent"
+          style={{ minHeight: 56, paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4px)" }}
+        >
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-lg leading-none text-white">
+            +
+          </span>
+          New
+        </button>
+      </nav>
 
       <CommandPalette
         open={commandPaletteOpen}

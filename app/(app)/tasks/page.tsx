@@ -90,18 +90,18 @@ export default function TasksPage() {
         subtitle="Standalone tasks live here. Switch scope to see everything."
         actions={
           <div className="flex items-center gap-2">
-            <button onClick={() => setImportOpen(true)} className="btn">
+            <button onClick={() => setImportOpen(true)} className="btn tap">
               Import
             </button>
-            <button onClick={openNew} className="btn-primary">
+            <button onClick={openNew} className="btn-primary tap">
               New task
             </button>
           </div>
         }
       />
 
-      <div className="px-8 py-6">
-        <div className="mb-4 flex flex-wrap items-center gap-4">
+      <div className="page-x py-5 sm:py-6">
+        <div className="scroll-x mb-4 items-center gap-3 sm:flex-wrap">
           <LayoutGroup id="scope-toggle">
             <div className="relative flex gap-1 rounded-md bg-subtle p-1">
               {(
@@ -113,7 +113,7 @@ export default function TasksPage() {
                 <button
                   key={s.k}
                   onClick={() => setScope(s.k)}
-                  className={`relative rounded-md px-2.5 py-1 text-xs font-medium transition ${
+                  className={`relative flex flex-none items-center whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium transition sm:py-1 ${
                     scope === s.k ? "text-ink" : "text-muted hover:text-ink"
                   }`}
                 >
@@ -142,7 +142,7 @@ export default function TasksPage() {
                 <button
                   key={v.k}
                   onClick={() => setView(v.k)}
-                  className={`relative rounded-md px-2.5 py-1 text-xs font-medium transition ${
+                  className={`relative flex flex-none items-center whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium transition sm:py-1 ${
                     view === v.k ? "text-ink" : "text-muted hover:text-ink"
                   }`}
                 >
@@ -159,7 +159,7 @@ export default function TasksPage() {
             </div>
           </LayoutGroup>
 
-          <span className="ml-auto text-xs text-muted">{tasks.length} tasks</span>
+          <span className="ml-auto hidden flex-none text-xs text-muted sm:block">{tasks.length} tasks</span>
         </div>
 
         {error && (

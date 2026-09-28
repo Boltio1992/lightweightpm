@@ -127,7 +127,7 @@ export default function ProjectMembers({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="mt-2 flex w-full items-center gap-2 sm:mt-0 sm:w-auto">
                 <select
                   value={m.role}
                   onChange={async (e) => {
@@ -148,7 +148,7 @@ export default function ProjectMembers({
 
                 <button
                   onClick={() => remove(m.id)}
-                  className="flex-none rounded px-2 py-1 text-xs text-muted opacity-60 transition hover:text-danger hover:opacity-100"
+                  className="tap flex-none rounded px-3 text-xs text-muted opacity-60 transition hover:text-danger hover:opacity-100"
                 >
                   Remove
                 </button>
@@ -204,7 +204,7 @@ export default function ProjectMembers({
             <label className="label">Name</label>
             <input className="input" value={mName} onChange={(e) => setMName(e.target.value)} required />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="label">Title</label>
               <input className="input" value={mTitle} onChange={(e) => setMTitle(e.target.value)} />
@@ -214,7 +214,7 @@ export default function ProjectMembers({
               <input className="input" value={mRole} onChange={(e) => setMRole(e.target.value)} />
             </div>
           </div>
-          <button className="btn-primary w-full" disabled={adding}>
+          <button className="btn-primary tap w-full" disabled={adding}>
             {adding ? "Adding…" : "Add data member"}
           </button>
         </form>

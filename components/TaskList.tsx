@@ -52,13 +52,13 @@ function Row({
         animate={reduceMotion ? undefined : fadeUp.animate}
         exit={reduceMotion ? undefined : fadeUp.exit}
         transition={reduceMotion ? { duration: 0 } : motionTransition.fast}
-        className="group flex items-center gap-3 border-b border-line px-4 py-2.5 hover:bg-subtle"
-        style={{ paddingLeft: 16 + depth * 24 }}
+        className="group task-indent flex items-center gap-3 border-b border-line px-4 py-3 hover:bg-subtle sm:py-2.5"
+        style={{ paddingLeft: `calc(1rem + ${depth} * var(--task-indent, 24px))` }}
       >
         {subtasks.length > 0 ? (
           <button
             onClick={() => setOpen((v) => !v)}
-            className="flex-none text-muted hover:text-ink"
+            className="tap -ml-1 flex w-6 flex-none items-center justify-center text-muted hover:text-ink"
             aria-label="Toggle sub-tasks"
           >
             <svg
@@ -73,22 +73,30 @@ function Row({
           <span className="w-3 flex-none" />
         )}
 
+        {/* Grows to 22px + a 44px hit area on touch (see globals.css). */}
         <input
           type="checkbox"
           checked={task.status === "done"}
           onChange={toggleDone}
           disabled={busy}
-          className="h-4 w-4 flex-none cursor-pointer rounded border-line accent-accent"
+          className="task-check m-0 h-4 w-4 flex-none cursor-pointer rounded border-line accent-accent"
         />
 
         <button
           onClick={() => onEdit(task)}
-          className={`min-w-0 flex-1 truncate text-left text-sm ${
+          className={`min-w-0 flex-1 text-left ${
             task.status === "done" ? "text-muted line-through" : "text-ink"
           }`}
         >
-          {task.title}
-          {depth > 0 && <span className="ml-2 text-xs text-muted">sub-task</span>}
+          <span className="block truncate py-1 text-sm">{task.title}</span>
+          {/* Phones: the columns above are hidden, so put the essentials here. */}
+          <span className="flex items-center gap-2 pb-0.5 text-[11px] text-muted sm:hidden">
+            <PriorityBadge priority={task.priority} />
+            <StatusBadge status={task.status} />
+            <span className={overdue ? "font-medium text-danger" : ""}>{fmtDate(task.due_date)}</span>
+            {depth > 0 && <span>sub-task</span>}
+          </span>
+          {depth > 0 && <span className="ml-2 hidden text-xs text-muted sm:inline">sub-task</span>}
         </button>
 
         <div className="hidden flex-none items-center gap-2 sm:flex">
@@ -130,11 +138,13 @@ function Row({
           {task.assignee?.name || task.assignee?.username || "Unassigned"}
         </span>
 
-        <div className="flex flex-none gap-1 opacity-0 transition group-hover:opacity-100">
+        {/* Always visible on touch — hover-only controls are unreachable with a
+            finger. On desktop they stay hover-revealed to keep rows calm. */}
+        <div className="flex flex-none gap-0.5 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">
           {depth === 0 && (
             <button
               onClick={() => onAddSub(task)}
-              className="rounded px-1.5 py-0.5 text-xs text-muted hover:bg-white hover:text-accent"
+              className="tap rounded px-2 text-xs text-muted hover:bg-white hover:text-accent"
               title="Add sub-task"
             >
               + Sub
@@ -142,7 +152,7 @@ function Row({
           )}
           <button
             onClick={remove}
-            className="rounded px-1.5 py-0.5 text-xs text-muted hover:bg-white hover:text-danger"
+            className="tap rounded px-2 text-xs text-muted hover:bg-white hover:text-danger"
             title="Delete"
           >
             Delete
@@ -214,7 +224,8 @@ export default function TaskList({
 
   return (
     <div className="card overflow-hidden">
-      <div className="flex items-center gap-3 border-b border-line bg-subtle px-4 py-2 text-xs font-medium text-muted">
+      {/* Column header is meaningless once the columns collapse into cards. */}
+      <div className="hidden items-center gap-3 border-b border-line bg-subtle px-4 py-2 text-xs font-medium text-muted sm:flex">
         <span className="w-3" />
         <span className="w-4" />
         <span className="flex-1">Task</span>

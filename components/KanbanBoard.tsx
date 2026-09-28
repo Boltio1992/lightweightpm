@@ -7,7 +7,8 @@ import {
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useDraggable,
   useDroppable,
   useSensor,
@@ -37,7 +38,7 @@ function Card({
       {...listeners}
       {...attributes}
       onClick={() => onEdit(task)}
-      className={`gpu card cursor-grab p-3 active:cursor-grabbing hover:border-accent/60 transition ${
+      className={`gpu card tap cursor-grab p-3 active:cursor-grabbing hover:border-accent/60 transition ${
         isDragging ? "opacity-40" : ""
       }`}
       // NOTE: no `layout` prop here on purpose. A per-card layout animation
@@ -130,16 +131,16 @@ function Column({
   return (
     <motion.div
       ref={setNodeRef}
-      className={`flex w-72 flex-none flex-col rounded-lg border p-2 transition ${
+      className={`flex w-[84vw] max-w-[22rem] flex-none snap-column flex-col rounded-lg border p-2 transition sm:w-72 ${
         isOver ? "border-accent bg-accentSoft/70" : "border-line bg-subtle"
       }`}
       animate={isOver && !reduceMotion ? { scale: 1.01 } : { scale: 1 }}
       transition={reduceMotion ? { duration: 0 } : motionTransition.fast}
     >
       <div className="mb-2 flex items-center justify-between px-1 py-1">
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           {color && <span className="h-2.5 w-2.5 rounded-full flex-none" style={{ backgroundColor: color }} />}
-          <span className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</span>
+          <span className="truncate text-xs font-semibold uppercase tracking-wide text-muted">{label}</span>
         </div>
         <span className="chip bg-white text-muted">{tasks.length}</span>
       </div>
@@ -172,7 +173,12 @@ export default function KanbanBoard({
   // Local optimistic copy so cards move instantly, before the API round-trip.
   const [optimistic, setOptimistic] = useState<Record<string, string>>({});
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  // Mouse: a small movement starts the drag. Touch: a short long-press starts
+  // it, so a normal tap still opens the task and swiping still scrolls.
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
+  );
 
   const resolved = tasks.map((t) => ({ ...t, status: (optimistic[t.id] ?? t.status) as TaskStatus }));
   const activeTask = resolved.find((t) => t.id === activeId) ?? null;
@@ -224,7 +230,10 @@ export default function KanbanBoard({
 
   return (
     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-      <div className="scroll-area flex gap-3 overflow-x-auto pb-4">
+      <p className="mb-2 text-xs text-muted sm:hidden">
+        Swipe sideways for more columns · press and hold a card to move it · tap to open.
+      </p>
+      <div className="scroll-area snap-x-columns flex gap-3 overflow-x-auto pb-4">
         <LayoutGroup>
           {columns.map(({ key, label, color }) => (
             <Column
