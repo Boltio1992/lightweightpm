@@ -67,3 +67,49 @@ export async function insertSkippingMissingColumns<T = Record<string, any>>(
 
   return { data: null, error: { message: `Too many missing columns on "${table}".` }, droppedColumns: dropped };
 }
+
+/**
+ * Same idea as insertSkippingMissingColumns(), for updates: drops any column
+ * the database/schema cache does not know and retries.
+ */
+export async function updateSkippingMissingColumns<T = Record<string, any>>(
+  table: string,
+  patch: Record<string, unknown>,
+  match: { column: string; value: string },
+  select: string
+): Promise<ResilientInsertResult<T>> {
+  if (Object.keys(patch).length === 0) return { data: null, error: { message: "Nothing to update." }, droppedColumns: [] };
+
+  let payload = { ...patch };
+  const dropped: string[] = [];
+  const maxAttempts = Object.keys(patch).length + 1;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const res = await supabaseAdmin()
+      .from(table)
+      .update(payload)
+      .eq(match.column, match.value)
+      .select(select);
+
+    if (!res.error) {
+      return { data: (res.data ?? null) as T[] | null, error: null, droppedColumns: dropped };
+    }
+
+    const column = missingColumnFromError(res.error.message ?? "");
+    if (!column || !(column in payload)) {
+      return { data: null, error: { message: res.error.message }, droppedColumns: dropped };
+    }
+
+    dropped.push(column);
+    const copy = { ...payload };
+    delete copy[column];
+    payload = copy;
+  }
+
+  return { data: null, error: { message: `Too many missing columns on "${table}".` }, droppedColumns: dropped };
+}
+
+/** True when an error means "this table does not exist (yet)". */
+export function isMissingRelationError(message: string | undefined): boolean {
+  return /relation "([^"]+)" does not exist|Could not find the table/i.test(message ?? "");
+}

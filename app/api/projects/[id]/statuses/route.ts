@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/requireUser";
+import { isMissingRelationError } from "@/lib/resilientInsert";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 import { randomUUID } from "crypto";
 import type { ProjectStatus } from "@/types";
@@ -24,6 +25,17 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     .order("sort_order", { ascending: true });
 
   if (error) {
+    // The table only exists once the project-settings migration has run. Fall
+    // back to the built-in statuses instead of 500-ing the project page.
+    if (isMissingRelationError(error.message)) {
+      return NextResponse.json({
+        statuses: DEFAULT_STATUSES.map((s) => ({
+          id: `${params.id}:${s.key}`,
+          project_id: params.id,
+          ...s,
+        })) as ProjectStatus[],
+      });
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

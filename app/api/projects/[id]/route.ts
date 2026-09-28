@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/requireUser";
+import { updateSkippingMissingColumns } from "@/lib/resilientInsert";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 
-const PROJECT_SELECT =
-  "id, name, description, status, start_date, end_date, percent_complete, accent_color, icon, owner_id, default_view, archived_at, created_by, created_at, updated_at";
+// "*" instead of an explicit list: naming a column the live database (or
+// PostgREST's schema cache) does not know makes the query fail, which surfaced
+// as a bogus 404 → "Project not found" on the project detail page.
+const PROJECT_SELECT = "*";
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const auth = await requireUser();
@@ -69,18 +72,33 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     patch.percent_complete = value;
   }
 
-  const { data, error } = await supabaseAdmin()
-    .from("projects")
-    .update(patch)
-    .eq("id", params.id)
-    .select(PROJECT_SELECT)
-    .single();
+  // Columns like accent_color / icon / default_view may not exist in older
+  // databases; drop them rather than failing the whole edit.
+  const result = await updateSkippingMissingColumns<Record<string, any>>(
+    "projects",
+    patch,
+    { column: "id", value: params.id },
+    PROJECT_SELECT
+  );
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (result.error) {
+    return NextResponse.json({ error: result.error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ project: { ...data, accent_color: data.accent_color ?? "#12A594", icon: data.icon ?? "folder", default_view: data.default_view ?? "kanban" } });
+  const data = (result.data ?? [])[0] ?? null;
+  if (!data) {
+    return NextResponse.json({ error: "Project not found." }, { status: 404 });
+  }
+
+  return NextResponse.json({
+    project: {
+      ...data,
+      accent_color: data.accent_color ?? "#12A594",
+      icon: data.icon ?? "folder",
+      default_view: data.default_view ?? "kanban",
+    },
+    droppedColumns: result.droppedColumns,
+  });
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {

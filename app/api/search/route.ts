@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   if (!q) {
     // Return recent projects & tasks
     const [pRes, tRes] = await Promise.all([
-      db.from("projects").select("id, name, description, status, accent_color, icon").limit(5),
+      db.from("projects").select("id, name, description, status").limit(5),
       db.from("tasks").select("id, title, status, priority, project_id").limit(8),
     ]);
     return NextResponse.json({
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   }
 
   const [pRes, tRes] = await Promise.all([
-    db.from("projects").select("id, name, description, status, accent_color, icon").or(`name.ilike.%${q}%,description.ilike.%${q}%`).limit(10),
+    db.from("projects").select("id, name, description, status").or(`name.ilike.%${q}%,description.ilike.%${q}%`).limit(10),
     db.from("tasks").select("id, title, status, priority, project_id").or(`title.ilike.%${q}%,description.ilike.%${q}%`).limit(15),
   ]);
 
