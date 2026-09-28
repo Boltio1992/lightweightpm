@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { ProjectStatusBadge } from "@/components/Badges";
 import { countdownLabel, initials } from "@/lib/format";
 import type { AttentionItem, AttentionReason, DashboardData, ProjectHealth } from "@/lib/dashboard";
@@ -27,6 +28,9 @@ const PRIORITY_MARK: Record<TaskPriority | string, string> = {
   medium: "·",
   low: "·",
 };
+
+/** Attention list is paginated so the dashboard never grows into a wall of rows. */
+const ATTENTION_PAGE_SIZE = 10;
 
 function Metric({
   label,
@@ -101,6 +105,13 @@ export default function DashboardView({ data, todayLabel }: { data: DashboardDat
   const { summary, attention, health, workload, trend } = data;
 
   const attentionTotal = attention.items.length;
+  const attentionPages = Math.max(1, Math.ceil(attentionTotal / ATTENTION_PAGE_SIZE));
+  const [attentionPage, setAttentionPage] = useState(0);
+  // Clamped while rendering so a shrinking list can never strand us on a blank page.
+  const page = Math.min(attentionPage, attentionPages - 1);
+  const pageStart = page * ATTENTION_PAGE_SIZE;
+  const pageItems = attention.items.slice(pageStart, pageStart + ATTENTION_PAGE_SIZE);
+
   const maxOpen = Math.max(1, ...workload.map((w) => w.open));
   const maxTrend = Math.max(1, ...trend.map((t) => t.count));
   const trendDelta = summary.completedLast7 - summary.completedPrev7;
@@ -116,30 +127,6 @@ export default function DashboardView({ data, todayLabel }: { data: DashboardDat
       </div>
 
       <div className="page-x space-y-4 py-5 sm:space-y-5 sm:py-6">
-        {/* What needs a decision today. */}
-        <section className="card overflow-hidden">
-          <SectionHeader
-            title="Needs attention"
-            hint={
-              attentionTotal > 0
-                ? `${attentionTotal} task${attentionTotal === 1 ? "" : "s"} to look at first`
-                : undefined
-            }
-          />
-          {attentionTotal === 0 ? (
-            <div className="flex items-center gap-2 px-4 py-6 text-sm text-muted">
-              <span aria-hidden="true">✅</span>
-              Nothing is overdue, blocked or unassigned. Nice.
-            </div>
-          ) : (
-            <ul>
-              {attention.items.map((item) => (
-                <AttentionRow key={item.id} item={item} />
-              ))}
-            </ul>
-          )}
-        </section>
-
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           <Metric label="Open tasks" value={summary.openTasks} hint={`${summary.totalTasks} total`} />
           <Metric
@@ -307,6 +294,62 @@ export default function DashboardView({ data, todayLabel }: { data: DashboardDat
             </div>
           </section>
         </div>
+
+        {/* What needs a decision — kept last: read the numbers first, then act. */}
+        <section className="card overflow-hidden">
+          <SectionHeader
+            title="Needs attention"
+            hint={
+              attentionTotal > 0
+                ? `${attentionTotal} task${attentionTotal === 1 ? "" : "s"} to look at first`
+                : undefined
+            }
+            href="/tasks"
+            linkLabel="All tasks"
+          />
+          {attentionTotal === 0 ? (
+            <div className="flex items-center gap-2 px-4 py-6 text-sm text-muted">
+              <span aria-hidden="true">✅</span>
+              Nothing is overdue, blocked or unassigned. Nice.
+            </div>
+          ) : (
+            <>
+              <ul>
+                {pageItems.map((item) => (
+                  <AttentionRow key={item.id} item={item} />
+                ))}
+              </ul>
+              {attentionPages > 1 && (
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-2">
+                  <p className="text-xs text-muted">
+                    {pageStart + 1}–{pageStart + pageItems.length} of {attentionTotal}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="btn px-2.5 text-xs disabled:opacity-40"
+                      disabled={page === 0}
+                      onClick={() => setAttentionPage(page - 1)}
+                    >
+                      Prev
+                    </button>
+                    <span className="text-xs text-muted">
+                      Page {page + 1} / {attentionPages}
+                    </span>
+                    <button
+                      type="button"
+                      className="btn px-2.5 text-xs disabled:opacity-40"
+                      disabled={page >= attentionPages - 1}
+                      onClick={() => setAttentionPage(page + 1)}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </section>
       </div>
     </>
   );
