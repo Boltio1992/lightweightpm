@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/requireUser";
+import { insertSkippingMissingColumns } from "@/lib/resilientInsert";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 
 // "*" instead of an explicit list: a column that exists in schema.sql but not
@@ -86,15 +87,20 @@ export async function POST(req: NextRequest) {
     created_by: auth.id,
   };
 
-  const { data, error } = await supabaseAdmin()
-    .from("projects")
-    .insert(insert)
-    .select(PROJECT_SELECT)
-    .single();
+  // Newer columns (accent_color, icon, default_view, percent_complete) may not
+  // exist in older databases; drop them instead of failing project creation.
+  const { data, error, droppedColumns } = await insertSkippingMissingColumns(
+    "projects",
+    [insert],
+    PROJECT_SELECT
+  );
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ project: data });
+  return NextResponse.json({
+    project: (data ?? [])[0] ?? null,
+    droppedColumns,
+  });
 }
