@@ -186,15 +186,15 @@ export default function ProjectDetailPage() {
     <>
       {/* Archived Notice Banner */}
       {isArchived && (
-        <div className="page-x flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/20 bg-amber-500/10 py-2.5">
-          <p className="flex items-center gap-2 text-xs font-medium text-amber-800">
+        <div className="page-x flex flex-wrap items-center justify-between gap-2 border-b border-warn bg-warnSoft0/10 py-2.5">
+          <p className="flex items-center gap-2 text-xs font-medium text-warn">
             <span>⚠️</span>
             This project is currently archived. Tasks are read-only until restored.
           </p>
           <button
             type="button"
             onClick={toggleArchive}
-            className="rounded bg-amber-600 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-amber-700"
+            className="rounded bg-warn px-2.5 py-1 text-xs font-semibold text-white transition hover:brightness-110"
           >
             Restore project
           </button>
@@ -202,7 +202,7 @@ export default function ProjectDetailPage() {
       )}
 
       {/* Project Header */}
-      <div className="page-x border-b border-line bg-white pb-0 pt-4 sm:pt-5">
+      <div className="page-x border-b border-line bg-surface pb-0 pt-4 sm:pt-5">
         <div className="flex items-center justify-between gap-3">
           <Link href="/projects" className="tap -ml-2 flex items-center gap-1 text-xs text-muted hover:text-ink">
             <span>←</span> Projects
@@ -258,7 +258,7 @@ export default function ProjectDetailPage() {
                   <div className="fixed inset-0 z-20" onClick={() => setShowActionMenu(false)} />
                   <div
                     role="menu"
-                    className="absolute right-0 top-full z-30 mt-1 w-52 rounded-lg border border-line bg-white p-1.5 shadow-xl"
+                    className="absolute right-0 top-full z-30 mt-1 w-52 rounded-lg border border-line bg-surface p-1.5 shadow-xl"
                   >
                     <button
                       type="button"
@@ -303,7 +303,7 @@ export default function ProjectDetailPage() {
                         setShowActionMenu(false);
                         deleteProject();
                       }}
-                      className="flex w-full items-center gap-2 rounded px-3 py-2.5 text-left text-sm text-danger hover:bg-rose-50 sm:py-1.5 sm:text-xs"
+                      className="flex w-full items-center gap-2 rounded px-3 py-2.5 text-left text-sm text-danger hover:bg-dangerSoft sm:py-1.5 sm:text-xs"
                     >
                       🗑️ Delete Project
                     </button>

@@ -176,7 +176,7 @@ export default function ProjectMembers({
                   onClick={() => addRegistered(u)}
                   className="tap-row w-full gap-2 px-3 py-2 text-left hover:bg-subtle"
                 >
-                  <div className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-ink text-xs font-semibold text-white">
+                  <div className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-accent text-xs font-semibold text-white">
                     {(u.name || u.username).slice(0, 2).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">

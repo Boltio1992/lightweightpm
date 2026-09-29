@@ -39,7 +39,7 @@ function Card({
       {...listeners}
       {...attributes}
       onClick={() => onEdit(task)}
-      className={`gpu card tap cursor-grab p-3 active:cursor-grabbing hover:border-accent/60 transition ${
+      className={`gpu card tap cursor-grab p-3 active:cursor-grabbing hover:border-accent transition ${
         isDragging ? "opacity-40" : ""
       }`}
       // NOTE: no `layout` prop here on purpose. A per-card layout animation
@@ -70,7 +70,7 @@ function Card({
             <span className="text-xs text-muted">Progress</span>
             <span className="text-xs font-medium text-muted">{task.percent_complete}%</span>
           </div>
-          <div className="h-1.5 w-full rounded-full bg-gray-200 overflow-hidden">
+          <div className="h-1.5 w-full rounded-full bg-line overflow-hidden">
             <div 
               className="h-full bg-accent" 
               style={{ width: `${task.percent_complete}%` }}
@@ -83,7 +83,7 @@ function Card({
         <PriorityBadge priority={task.priority} />
         {task.parent_task_id && <span className="chip bg-subtle text-muted">sub-task</span>}
         {task.duration_days && (
-          <span className="chip bg-blue-100 text-blue-600">{task.duration_days}d</span>
+          <span className="chip bg-accentSoft text-accent">{task.duration_days}d</span>
         )}
         {task.tags && task.tags.map((tag) => (
           <span key={tag} className="chip bg-subtle text-muted font-normal text-xs">
@@ -133,7 +133,7 @@ function Column({
     <motion.div
       ref={setNodeRef}
       className={`flex w-[84vw] max-w-[22rem] flex-none snap-column flex-col rounded-lg border p-2 transition sm:w-72 ${
-        isOver ? "border-accent bg-accentSoft/70" : "border-line bg-subtle"
+        isOver ? "border-accent bg-accentSoft" : "border-line bg-subtle"
       }`}
       animate={isOver && !reduceMotion ? { scale: 1.01 } : { scale: 1 }}
       transition={reduceMotion ? { duration: 0 } : motionTransition.fast}
@@ -143,7 +143,7 @@ function Column({
           {color && <span className="h-2.5 w-2.5 rounded-full flex-none" style={{ backgroundColor: color }} />}
           <span className="truncate text-xs font-semibold uppercase tracking-wide text-muted">{label}</span>
         </div>
-        <span className="chip bg-white text-muted">{tasks.length}</span>
+        <span className="chip bg-surface text-muted">{tasks.length}</span>
       </div>
       <div className="flex min-h-[120px] flex-col gap-2">
         <AnimatePresence initial={false}>

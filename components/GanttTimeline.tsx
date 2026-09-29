@@ -12,6 +12,10 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 // .gantt-bar so the coarse-pointer rule there can grow them to 44px. Only the
 // header is sized here, because the chart's weekend bands and today marker are
 // positioned from it.
+// Header sizes live in globals.css as .gantt-month-band / the row after it, so
+// the coarse-pointer rule there can grow them on touch. Only the combined height
+// is computed here, because the weekend bands and today marker are positioned
+// from it. Keep these in sync with the CSS.
 const MONTH_H = 26;
 const TICK_H = 26;
 // +2 for the two 1px borders under the header rows, so the label column and
@@ -165,42 +169,94 @@ export default function GanttTimeline({
 
   const chartWidth = bounds.days * dayWidth;
 
+  /* Header bands are cut on real calendar boundaries, not every N days from the
+     window start — otherwise a "1 Sep" label sits on 3 Sep and nothing lines up
+     with the bars underneath. */
   const months = useMemo(() => {
-    const out: { left: number; width: number; label: string }[] = [];
+    const out: { left: number; width: number; label: string; partial: boolean }[] = [];
     let i = 0;
-    while (i <= bounds.days) {
+    const first = bounds.start;
+    // Leading partial month: from the window start to the end of that month.
+    if (!(first.getDate() === 1 && first.getHours() === 0 && first.getMinutes() === 0)) {
+      const monthEnd = new Date(first.getFullYear(), first.getMonth() + 1, 1);
+      const span = Math.max(1, Math.round((monthEnd.getTime() - startOfDay(first).getTime()) / DAY_MS));
+      out.push({
+        left: 0,
+        width: Math.min(span, bounds.days) * dayWidth,
+        label: first.toLocaleDateString(undefined, { month: "short", year: "numeric" }),
+        partial: true,
+      });
+      i = Math.min(span, bounds.days);
+    }
+    while (i < bounds.days) {
       const d = addDays(bounds.start, i);
-      let j = i;
-      while (j <= bounds.days) {
-        const next = addDays(bounds.start, j);
-        if (next.getMonth() !== d.getMonth() || next.getFullYear() !== d.getFullYear()) break;
-        j += 1;
-      }
+      const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+      const span = Math.round((monthEnd.getTime() - d.getTime()) / DAY_MS);
+      const width = Math.max(1, Math.min(span, bounds.days - i)) * dayWidth;
       out.push({
         left: i * dayWidth,
-        width: (j - i) * dayWidth,
-        label: d.toLocaleDateString(undefined, { month: "long", year: "numeric" }),
+        width,
+        label:
+          width < 72
+            ? d.toLocaleDateString(undefined, { month: "short" })
+            : d.toLocaleDateString(undefined, { month: "long", year: "numeric" }),
+        partial: false,
       });
-      i = j;
+      i += Math.max(1, Math.min(span, bounds.days - i));
     }
     return out;
   }, [bounds, dayWidth]);
 
+  /* Three header densities. Each tick lands on a real boundary — the 1st of a
+     month, a Monday, or a day — and carries its own left offset, so labels can
+     never drift away from the gridlines below them. */
   const ticks = useMemo(() => {
-    const every = zoom === "day" ? 1 : 7;
-    const out: { left: number; label: string; strong: boolean }[] = [];
-    for (let i = 0; i <= bounds.days; i += every) {
+    const out: { left: number; width: number; label: string; strong: boolean }[] = [];
+
+    if (zoom === "month") {
+      for (let i = 0; i < bounds.days; ) {
+        const d = addDays(bounds.start, i);
+        const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+        const span = Math.max(1, Math.min(
+          Math.round((monthEnd.getTime() - d.getTime()) / DAY_MS),
+          bounds.days - i
+        ));
+        out.push({
+          left: i * dayWidth,
+          width: span * dayWidth,
+          label: d.toLocaleDateString(undefined, { month: "short" }),
+          strong: false,
+        });
+        i += span;
+      }
+      return out;
+    }
+
+    for (let i = 0; i < bounds.days; i += 1) {
       const d = addDays(bounds.start, i);
-      const isMonthStart = d.getDate() === 1;
+      const isMonday = d.getDay() === 1;
+      const isFirst = d.getDate() === 1;
+
+      if (zoom === "week") {
+        // Mondays only, and never on top of a month label.
+        if (!isMonday) continue;
+        out.push({
+          left: i * dayWidth,
+          width: 7 * dayWidth,
+          label: isFirst
+            ? d.toLocaleDateString(undefined, { month: "short" })
+            : String(d.getDate()),
+          strong: isFirst,
+        });
+        continue;
+      }
+
+      // Day zoom: one cell per day, weekday initials above the date.
       out.push({
         left: i * dayWidth,
-        label:
-          zoom === "day"
-            ? String(d.getDate())
-            : zoom === "week"
-            ? d.toLocaleDateString(undefined, { month: "short", day: "numeric" })
-            : String(d.getDate()),
-        strong: isMonthStart,
+        width: dayWidth,
+        label: String(d.getDate()),
+        strong: isFirst,
       });
     }
     return out;
@@ -217,6 +273,18 @@ export default function GanttTimeline({
     }
     return out;
   }, [bounds, dayWidth, zoom]);
+
+  /* Gridlines, positioned from the same tick data as the labels — one line per
+     week (or per month at month zoom), running the full height of the chart. */
+  const gridlines = useMemo(() => {
+    if (zoom === "day") {
+      return ticks.map((t) => ({ left: t.left, strong: t.strong, thin: true }));
+    }
+    if (zoom === "week") {
+      return ticks.map((t) => ({ left: t.left, strong: true, thin: false }));
+    }
+    return ticks.map((t) => ({ left: t.left, strong: true, thin: false }));
+  }, [ticks, zoom]);
 
   const today = startOfDay(new Date());
   const todayOffset =
@@ -304,7 +372,7 @@ export default function GanttTimeline({
         <div className="flex min-w-max">
           {/* Fixed label column. Narrow on a phone: at 360px a 240px column
               would leave nothing but a sliver of chart. */}
-          <div className="sticky left-0 z-20 w-36 flex-none border-r border-line bg-white sm:w-52 lg:w-60">
+          <div className="sticky left-0 z-20 w-36 flex-none border-r border-line bg-surface sm:w-52 lg:w-60">
             <div
               className="flex items-center border-b border-line bg-subtle px-3 text-xs font-medium text-muted"
               style={{ height: HEADER_H }}
@@ -344,45 +412,75 @@ export default function GanttTimeline({
           {/* Chart area */}
           <div
             className="relative flex-none"
-            style={{
-              width: chartWidth,
-              backgroundImage: `repeating-linear-gradient(to right, #eeece8 0 1px, transparent 1px ${dayWidth}px)`,
-            }}
+            style={{ width: chartWidth, background: "var(--gantt-canvas)" }}
           >
             {/* Month + tick header */}
-            <div className="sticky top-0 z-10 bg-white">
-              <div className="relative border-b border-line bg-subtle" style={{ height: MONTH_H }}>
+            <div className="sticky top-0 z-10" style={{ background: "var(--color-surface)" }}>
+              <div className="gantt-month-band relative border-b border-line">
                 {months.map((m, i) => (
                   <span
                     key={i}
-                    className="absolute top-0 flex h-full items-center overflow-hidden border-l border-line px-2 text-xs font-medium text-muted"
+                    className={`absolute top-0 flex h-full items-center overflow-hidden border-l border-line px-2 text-xs font-semibold text-ink ${
+                      m.partial ? "opacity-70" : ""
+                    }`}
                     style={{ left: m.left, width: m.width }}
                   >
-                    {m.label}
+                    <span className="truncate">{m.label}</span>
                   </span>
                 ))}
               </div>
               <div className="relative border-b border-line" style={{ height: TICK_H }}>
-                {ticks.map((t, i) => (
-                  <span
-                    key={i}
-                    className={`absolute top-0 flex h-full items-center whitespace-nowrap pl-1 text-xs ${
-                      t.strong ? "font-semibold text-ink" : "text-muted"
-                    }`}
-                    style={{ left: t.left }}
-                  >
-                    {t.label}
-                  </span>
-                ))}
+                {zoom === "day" &&
+                  ticks.map((t, i) => {
+                    const d = addDays(bounds.start, i);
+                    const weekend = d.getDay() === 0 || d.getDay() === 6;
+                    return (
+                      <span
+                        key={i}
+                        className="absolute top-0 flex flex-col items-center justify-center text-xs leading-tight"
+                        style={{ left: t.left, width: t.width }}
+                      >
+                        <span className={weekend ? "text-muted" : t.strong ? "font-semibold text-ink" : "text-muted"}>
+                          {d.toLocaleDateString(undefined, { weekday: "narrow" })}
+                        </span>
+                        <span className={t.strong ? "font-semibold text-ink" : "text-muted"}>{t.label}</span>
+                      </span>
+                    );
+                  })}
+                {zoom !== "day" &&
+                  ticks.map((t, i) => (
+                    <span
+                      key={i}
+                      className={`absolute top-0 flex h-full items-center justify-center overflow-hidden border-l border-line text-xs ${
+                        t.strong ? "font-semibold text-ink" : "text-muted"
+                      }`}
+                      style={{ left: t.left, width: t.width }}
+                    >
+                      {t.label}
+                    </span>
+                  ))}
               </div>
             </div>
+
+            {/* Gridlines — drawn from the same tick offsets as the labels, so a
+                label can never sit between two lines. */}
+            {gridlines.map((g, i) => (
+              <span
+                key={i}
+                aria-hidden="true"
+                className={`pointer-events-none absolute bottom-0 top-0 ${
+                  g.strong ? "border-l border-line" : "border-l border-line"
+                }`}
+                style={{ left: g.left }}
+              />
+            ))}
 
             {/* Weekend shading */}
             {weekends.map((w, i) => (
               <span
                 key={i}
                 aria-hidden="true"
-                className="pointer-events-none absolute bottom-0 bg-subtle/70"
+                className="pointer-events-none absolute bottom-0 bg-subtle"
                 style={{ left: w.left, width: w.width, top: HEADER_H }}
               />
             ))}
@@ -405,7 +503,7 @@ export default function GanttTimeline({
                 return (
                   <div
                     key={`gr-${entry.key}`}
-                    className="gantt-group border-b border-line bg-subtle/60"
+                    className="gantt-group border-b border-line bg-subtle"
                   />
                 );
               }
@@ -414,35 +512,46 @@ export default function GanttTimeline({
               const left = ((range.start.getTime() - bounds.start.getTime()) / DAY_MS) * dayWidth;
               const spanDays = (range.end.getTime() - range.start.getTime()) / DAY_MS;
               const width = Math.max(dayWidth * 0.8, spanDays * dayWidth);
-              const color = STATUS_COLOR[task.status as keyof typeof STATUS_COLOR] ?? "#888780";
+              const color = STATUS_COLOR[task.status as keyof typeof STATUS_COLOR] ?? "var(--color-muted)";
               const overdue = isOverdue(task);
               const progress = task.status === "done" ? 100 : task.percent_complete ?? 0;
+              // One day at day/month zoom is only a few pixels wide, so a
+              // text label inside the bar would be clipped mid-word. Below this
+              // threshold the bar is drawn as a shape only.
+              const showLabel = width >= 96;
+              const showProgress = progress > 0 && progress < 100;
 
               return (
                 <div key={task.id} className="gantt-row relative border-b border-line">
                   <button
                     type="button"
                     onClick={() => onEdit(task)}
-                    className="gantt-bar absolute flex items-center overflow-hidden rounded transition hover:brightness-95"
+                    className="gantt-bar absolute overflow-hidden rounded transition hover:brightness-110"
                     style={{
                       left,
                       width,
-                      background: `${color}26`,
-                      border: `1px solid ${overdue ? "#c0392b" : color}`,
+                      // Solid body in the status colour, with the unfinished
+                      // remainder drawn as a lighter overlay. A translucent body
+                      // with a solid progress fill made a 0% bar look empty.
+                      background: progress >= 100 ? color : `color-mix(in srgb, ${color} 38%, var(--color-surface))`,
+                      border: `1px solid ${overdue ? "var(--color-danger)" : color}`,
                     }}
                     title={`${task.title} · ${fmtDate(task.start_date, { year: false })} → ${fmtDate(
                       task.due_date,
                       { year: false }
-                    )}`}
-                    aria-label={`${task.title}, ${STATUS_LABEL[task.status as keyof typeof STATUS_LABEL] ?? task.status}`}
+                    )} · ${progress}%`}
+                    aria-label={`${task.title}, ${STATUS_LABEL[task.status as keyof typeof STATUS_LABEL] ?? task.status}, ${progress}% complete`}
                   >
-                    <span
-                      aria-hidden="true"
-                      className="absolute inset-y-0 left-0"
-                      style={{ width: `${progress}%`, background: color }}
-                    />
-                    {width > 96 && (
-                      <span className="relative z-10 block truncate px-1.5 text-xs leading-[18px] text-ink">
+                    {/* Unfinished portion, drawn from the right edge. */}
+                    {showProgress && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute inset-y-0 right-0"
+                        style={{ width: `${100 - progress}%`, background: "var(--color-surface)", opacity: 0.55 }}
+                      />
+                    )}
+                    {showLabel && (
+                      <span className="relative z-10 block truncate px-1.5 text-xs font-medium leading-[18px] text-white">
                         {task.title}
                       </span>
                     )}

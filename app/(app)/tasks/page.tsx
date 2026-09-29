@@ -163,7 +163,7 @@ export default function TasksPage() {
         </div>
 
         {error && (
-          <div className="mb-4 flex items-center justify-between rounded-md border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
+          <div className="mb-4 flex items-center justify-between rounded-md border border-danger bg-dangerSoft px-4 py-3 text-xs text-danger">
             <span>{error}</span>
             <button
               onClick={() => load()}

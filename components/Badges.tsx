@@ -5,13 +5,14 @@ import type { TaskPriority, TaskStatus } from "@/types";
    That way "urgent" can never be mistaken for "blocked". */
 
 /* Single source of truth for status colour — badges, dots and the timeline bars
-   all read the same value, so "blocked" is one red everywhere. */
+   all read the same value, so "blocked" is one red everywhere. The values are
+   CSS variables so the palette flips with the theme. */
 export const STATUS_COLOR: Record<TaskStatus, string> = {
-  todo: "#888780",
-  in_progress: "#185fa5",
-  review: "#854f0b",
-  blocked: "#c0392b",
-  done: "#3b6d11",
+  todo: "var(--color-muted)",
+  in_progress: "var(--color-accent)",
+  review: "var(--color-warn)",
+  blocked: "var(--color-danger)",
+  done: "var(--color-good)",
 };
 
 export const STATUS_LABEL: Record<TaskStatus, string> = {
@@ -57,10 +58,10 @@ export function StatusDot({ status }: { status: TaskStatus }) {
 }
 
 const PRIORITY_COLOR: Record<TaskPriority, string> = {
-  urgent: "#c0392b",
-  high: "#854f0b",
-  medium: "#185fa5",
-  low: "#6b6b66",
+  urgent: "var(--color-danger)",
+  high: "var(--color-warn)",
+  medium: "var(--color-accent)",
+  low: "var(--color-muted)",
 };
 
 const PRIORITY_LABEL: Record<TaskPriority, string> = {
@@ -96,7 +97,7 @@ export function PriorityBadge({ priority }: { priority: TaskPriority }) {
             width="2.4"
             height={(i + 1) * 2.4}
             rx="0.6"
-            fill={i < bars ? color : "#d9d7d1"}
+            fill={i < bars ? color : "var(--color-line)"}
           />
         ))}
       </svg>
@@ -106,10 +107,10 @@ export function PriorityBadge({ priority }: { priority: TaskPriority }) {
 }
 
 const PROJECT_STATUS_STYLE: Record<string, { dot: string; chip: string; label: string }> = {
-  active: { dot: "#3b6d11", chip: "bg-goodSoft text-good", label: "Active" },
-  on_hold: { dot: "#854f0b", chip: "bg-warnSoft text-warn", label: "On Hold" },
-  done: { dot: "#185fa5", chip: "bg-accentSoft text-accent", label: "Done" },
-  archived: { dot: "#6b6b66", chip: "bg-subtle text-ink", label: "Archived" },
+  active: { dot: "var(--color-good)", chip: "bg-goodSoft text-good", label: "Active" },
+  on_hold: { dot: "var(--color-warn)", chip: "bg-warnSoft text-warn", label: "On Hold" },
+  done: { dot: "var(--color-accent)", chip: "bg-accentSoft text-accent", label: "Done" },
+  archived: { dot: "var(--color-muted)", chip: "bg-subtle text-ink", label: "Archived" },
 };
 
 export function ProjectStatusBadge({ status }: { status: string }) {

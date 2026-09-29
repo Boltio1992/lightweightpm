@@ -118,7 +118,7 @@ export default function DashboardView({ data, todayLabel }: { data: DashboardDat
 
   return (
     <>
-      <div className="page-x border-b border-line bg-white py-4 sm:py-5">
+      <div className="page-x border-b border-line bg-surface py-4 sm:py-5">
         <h1 className="text-xl font-bold text-ink">Dashboard</h1>
         <p className="mt-0.5 text-sm text-muted">
           {todayLabel} · {summary.activeProjects} active project{summary.activeProjects === 1 ? "" : "s"},{" "}
@@ -205,7 +205,7 @@ export default function DashboardView({ data, todayLabel }: { data: DashboardDat
                         {expected !== null && (
                           <span
                             aria-hidden="true"
-                            className="absolute -top-0.5 h-2.5 w-0.5 rounded-full bg-ink/70"
+                            className="absolute -top-0.5 h-2.5 w-0.5 rounded-full bg-ink"
                             style={{ left: `${expected}%` }}
                           />
                         )}

@@ -219,13 +219,13 @@ export default function ProjectsPage() {
                   key={f.key}
                   onClick={() => setFilter(f.key)}
                   className={`tap-tab flex-none gap-1.5 whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium transition sm:px-2.5 sm:py-1 ${
-                    filter === f.key ? "bg-ink text-white" : "text-muted hover:bg-subtle"
+                    filter === f.key ? "bg-accent text-white" : "text-muted hover:bg-subtle"
                   }`}
                 >
                   <span>{f.label}</span>
                   <span
                     className={`rounded-full px-1.5 py-0.2 text-xs ${
-                      filter === f.key ? "bg-white/20 text-white" : "bg-subtle text-muted"
+                      filter === f.key ? "bg-black/25 text-white" : "bg-subtle text-muted"
                     }`}
                   >
                     {count}
@@ -436,13 +436,13 @@ export default function ProjectsPage() {
       <Modal open={open} onClose={() => setOpen(false)} title="Create New Project" width="max-w-xl">
         <form onSubmit={create} className="space-y-4">
           {warning && (
-            <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5">
+            <div className="flex items-start gap-2 rounded-lg border border-warn bg-warnSoft px-3 py-2.5">
               <span className="text-sm leading-none">⚠️</span>
-              <p className="flex-1 text-xs leading-relaxed text-amber-900">{warning}</p>
+              <p className="flex-1 text-xs leading-relaxed text-warn">{warning}</p>
               <button
                 type="button"
                 onClick={() => setWarning(null)}
-                className="tap -my-1 px-1 text-amber-700 hover:text-amber-900"
+                className="tap -my-1 px-1 text-warn hover:text-warn"
                 aria-label="Dismiss warning"
               >
                 ✕
@@ -513,7 +513,7 @@ export default function ProjectsPage() {
                   className={`flex h-11 w-11 items-center justify-center rounded-lg border text-lg transition sm:h-9 sm:w-9 sm:text-base ${
                     icon === item.key
                       ? "border-ink bg-subtle scale-105"
-                      : "border-line bg-white hover:bg-subtle text-muted"
+                      : "border-line bg-surface hover:bg-subtle text-muted"
                   }`}
                 >
                   {item.emoji}

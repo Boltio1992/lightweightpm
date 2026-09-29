@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
 // viewport-fit=cover is what makes env(safe-area-inset-bottom) report a real
 // value on iOS — without it the bottom tab bar and every .pb-nav page sit
@@ -10,6 +11,10 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   interactiveWidget: "resizes-content",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#16161a" },
+  ],
 };
 
 export const metadata: Metadata = {
@@ -23,7 +28,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Runs before the first paint: applies the stored theme to <html> so a
+            reload never flashes the wrong colours. ThemeToggle keeps it in sync
+            afterwards, and the mutation happens before React hydrates, hence
+            suppressHydrationWarning on <html> above. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="font-sans text-[14px] antialiased">{children}</body>
     </html>
   );

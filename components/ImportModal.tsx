@@ -76,7 +76,7 @@ export default function ImportModal({
     <Modal open={open} onClose={onClose} title="Import from Excel" width="max-w-lg">
       <div className="space-y-4">
         {/* Step 1: template */}
-        <div className="rounded-lg border border-line bg-subtle/50 p-3.5">
+        <div className="rounded-lg border border-line bg-subtle p-3.5">
           <p className="text-sm font-semibold text-ink">1 · Download the template</p>
           <p className="mt-1 text-xs text-muted">
             One sheet for projects, one for tasks, plus a reference sheet explaining every column.
@@ -88,7 +88,7 @@ export default function ImportModal({
         </div>
 
         {/* Step 2: upload */}
-        <div className="rounded-lg border border-line bg-subtle/50 p-3.5">
+        <div className="rounded-lg border border-line bg-subtle p-3.5">
           <p className="text-sm font-semibold text-ink">2 · Upload the filled file</p>
           <input
             ref={inputRef}
@@ -124,8 +124,8 @@ export default function ImportModal({
             <div
               className={`rounded-lg border p-3.5 text-sm ${
                 result.errors.length > 0
-                  ? "border-amber-500/30 bg-amber-500/10 text-amber-900"
-                  : "border-emerald-500/30 bg-emerald-500/10 text-emerald-900"
+                  ? "border-warn bg-warnSoft0/10 text-warn"
+                  : "border-good bg-goodSoft text-good"
               }`}
             >
               {imported ? (
@@ -176,13 +176,13 @@ function IssueList({
   tone: "danger" | "warning";
   issues: ImportIssue[];
 }) {
-  const color = tone === "danger" ? "text-danger" : "text-amber-700";
+  const color = tone === "danger" ? "text-danger" : "text-warn";
   return (
     <div>
       <p className={`text-xs font-semibold uppercase tracking-wide ${color}`}>
         {title} ({issues.length})
       </p>
-      <ul className="mt-1.5 max-h-44 space-y-1 overflow-y-auto rounded-md border border-line bg-white p-2.5 text-xs text-ink">
+      <ul className="mt-1.5 max-h-44 space-y-1 overflow-y-auto rounded-md border border-line bg-surface p-2.5 text-xs text-ink">
         {issues.map((issue, i) => (
           <li key={i}>
             <span className="font-medium text-muted">

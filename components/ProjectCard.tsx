@@ -58,7 +58,7 @@ export function CardMenu({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-20 mt-1 w-44 rounded-lg border border-line bg-white p-1.5 shadow-pop"
+          className="absolute right-0 top-full z-20 mt-1 w-44 rounded-lg border border-line bg-surface p-1.5 shadow-pop"
         >
           <button type="button" role="menuitem" className={item} onClick={() => { setOpen(false); onSettings(); }}>
             ✏️ Settings
@@ -70,7 +70,7 @@ export function CardMenu({
           <button
             type="button"
             role="menuitem"
-            className={`${item} text-danger hover:bg-rose-50`}
+            className={`${item} text-danger hover:bg-dangerSoft`}
             onClick={() => { setOpen(false); onDelete(); }}
           >
             🗑️ Delete

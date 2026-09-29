@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { applyTheme, readThemeChoice } from "@/lib/theme";
 import { ProjectStatusBadge, PriorityBadge } from "./Badges";
 import type { Project, Task } from "@/types";
 
@@ -105,6 +106,17 @@ export default function CommandPalette({
       },
     },
     {
+      id: "action-theme",
+      title: "Switch theme (light / dark / system)",
+      category: "Action",
+      keywords: "night dark mode appearance colour theme",
+      run: () => {
+        onClose();
+        const next = readThemeChoice() === "light" ? "dark" : readThemeChoice() === "dark" ? "system" : "light";
+        applyTheme(next);
+      },
+    },
+    {
       id: "action-dashboard",
       title: "Go to Dashboard",
       category: "Navigation",
@@ -134,7 +146,10 @@ export default function CommandPalette({
   ];
 
   const filteredActions = query.trim()
-    ? actions.filter((a) => a.title.toLowerCase().includes(query.toLowerCase()))
+    ? actions.filter((a) => {
+        const haystack = `${a.title} ${(a as { keywords?: string }).keywords ?? ""}`.toLowerCase();
+        return haystack.includes(query.toLowerCase());
+      })
     : actions;
 
   const totalItems = filteredActions.length + projects.length + tasks.length;
@@ -191,14 +206,14 @@ export default function CommandPalette({
     // Phones: a near-full-screen sheet anchored to the bottom, so the whole
     // thing stays above the on-screen keyboard and every row is in thumb reach.
     // From sm up: the usual floating palette near the top of the screen.
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-xs sm:items-start sm:px-4 sm:pt-20">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 backdrop-blur-xs sm:items-start sm:px-4 sm:pt-20">
       <div
-        className="flex h-[100dvh] w-full max-w-xl flex-col overflow-hidden rounded-none border border-line bg-white shadow-2xl sm:h-auto sm:max-h-[75vh] sm:rounded-xl"
+        className="flex h-[100dvh] w-full max-w-xl flex-col overflow-hidden rounded-none border border-line bg-surface shadow-2xl sm:h-auto sm:max-h-[75vh] sm:rounded-xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input Bar */}
         <div
-          className="flex flex-none items-center gap-3 border-b border-line bg-subtle/30 px-4 py-3"
+          className="flex flex-none items-center gap-3 border-b border-line bg-subtle px-4 py-3"
           style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)" }}
         >
           <svg className="h-5 w-5 text-muted flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -225,7 +240,7 @@ export default function CommandPalette({
               <path d="M6 6l12 12M18 6l-12 12" strokeLinecap="round" />
             </svg>
           </button>
-          <kbd className="hidden sm:inline-block rounded border border-line bg-white px-1.5 py-0.5 text-xs font-mono text-muted">
+          <kbd className="hidden sm:inline-block rounded border border-line bg-surface px-1.5 py-0.5 text-xs font-mono text-muted">
             ESC
           </kbd>
         </div>
@@ -253,11 +268,11 @@ export default function CommandPalette({
                       onClick={action.run}
                       onMouseEnter={() => setSelectedIndex(currentIndex)}
                       className={`tap-row w-full justify-between rounded-lg px-3 py-2 text-left text-xs transition ${
-                        isSelected ? "bg-ink text-white" : "text-ink hover:bg-subtle"
+                        isSelected ? "bg-accent text-white" : "text-ink hover:bg-subtle"
                       }`}
                     >
                       <span className="font-medium">{action.title}</span>
-                      <span className={`text-xs ${isSelected ? "text-white/80" : "text-muted"}`}>
+                      <span className={`text-xs ${isSelected ? "text-white/85" : "text-muted"}`}>
                         {action.category}
                       </span>
                     </button>
@@ -288,7 +303,7 @@ export default function CommandPalette({
                       }}
                       onMouseEnter={() => setSelectedIndex(currentIndex)}
                       className={`tap-row w-full justify-between rounded-lg px-3 py-2 text-left text-xs transition ${
-                        isSelected ? "bg-ink text-white" : "text-ink hover:bg-subtle"
+                        isSelected ? "bg-accent text-white" : "text-ink hover:bg-subtle"
                       }`}
                     >
                       <div className="flex items-center gap-2 min-w-0">
@@ -327,7 +342,7 @@ export default function CommandPalette({
                       }}
                       onMouseEnter={() => setSelectedIndex(currentIndex)}
                       className={`tap-row w-full justify-between rounded-lg px-3 py-2 text-left text-xs transition ${
-                        isSelected ? "bg-ink text-white" : "text-ink hover:bg-subtle"
+                        isSelected ? "bg-accent text-white" : "text-ink hover:bg-subtle"
                       }`}
                     >
                       <div className="flex items-center gap-2 min-w-0">
@@ -335,7 +350,7 @@ export default function CommandPalette({
                       </div>
                       <div className="flex items-center gap-2 flex-none">
                         <PriorityBadge priority={t.priority} />
-                        <span className={`text-xs capitalize ${isSelected ? "text-white/80" : "text-muted"}`}>
+                        <span className={`text-xs capitalize ${isSelected ? "text-white/85" : "text-muted"}`}>
                           {t.status.replace(/_/g, " ")}
                         </span>
                       </div>
@@ -354,7 +369,7 @@ export default function CommandPalette({
         </div>
 
         {/* Footer shortcuts — keyboard hints are noise on a touch device. */}
-        <div className="hidden flex-none items-center justify-between border-t border-line px-4 py-2 bg-subtle/50 text-xs text-muted sm:flex">
+        <div className="hidden flex-none items-center justify-between border-t border-line px-4 py-2 bg-subtle text-xs text-muted sm:flex">
           <span>Navigate with <kbd className="font-mono">↑</kbd> <kbd className="font-mono">↓</kbd></span>
           <span>Select with <kbd className="font-mono">Enter</kbd></span>
         </div>

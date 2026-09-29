@@ -171,12 +171,17 @@ function Row({
           </span>
         </div>
 
-        {/* 9 — row actions. Hover-revealed on desktop, always visible on touch. */}
-        <div className="flex flex-none items-center justify-end gap-0.5 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">
+        {/* 9 — row actions. Hover-revealed on desktop, always visible on touch.
+            The width is reserved rather than left to the content: the header has
+            an empty cell of the same size, so without it the two buttons would
+            be pushed out to the row edge and the whole column would look
+            misaligned. Phones use `auto` for this column, so the fixed width
+            only applies from sm up. */}
+        <div className="flex flex-none items-center justify-end gap-0.5 opacity-100 transition sm:w-[88px] sm:opacity-0 sm:group-hover:opacity-100">
           {depth === 0 && (
             <button
               onClick={() => onAddSub(task)}
-              className="tap rounded px-2 text-xs text-muted hover:bg-white hover:text-accent"
+              className="tap rounded px-2 text-xs text-muted hover:bg-subtle hover:text-accent"
               title="Add sub-task"
             >
               + Sub
@@ -184,7 +189,7 @@ function Row({
           )}
           <button
             onClick={remove}
-            className="tap rounded px-2 text-xs text-muted hover:bg-white hover:text-danger"
+            className="tap rounded px-2 text-xs text-muted hover:bg-subtle hover:text-danger"
             title="Delete"
           >
             Delete
@@ -258,7 +263,8 @@ export default function TaskList({
         <span className="hidden lg:block">Progress</span>
         <span className="text-right">Deadline</span>
         <span className="hidden text-right xl:block">Assignee</span>
-        <span aria-hidden="true" />
+        {/* Matches the actions cell in Row, so the columns cannot drift. */}
+        <span className="hidden sm:block" aria-hidden="true" />
       </div>
       <AnimatePresence initial={false}>
         {tasks.map((t) => (

@@ -409,13 +409,13 @@ export default function ProjectSettingsModal({
       {tab === "general" && (
         <form onSubmit={saveGeneral} className="space-y-4">
           {schemaWarning && (
-            <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5">
+            <div className="flex items-start gap-2 rounded-lg border border-warn bg-warnSoft px-3 py-2.5">
               <span className="text-sm leading-none">⚠️</span>
-              <p className="flex-1 text-xs leading-relaxed text-amber-900">{schemaWarning}</p>
+              <p className="flex-1 text-xs leading-relaxed text-warn">{schemaWarning}</p>
               <button
                 type="button"
                 onClick={() => setSchemaWarning(null)}
-                className="tap -my-1 -mr-1 px-1 text-amber-700 hover:text-amber-900"
+                className="tap -my-1 -mr-1 px-1 text-warn hover:text-warn"
                 aria-label="Dismiss warning"
               >
                 ✕
@@ -507,7 +507,7 @@ export default function ProjectSettingsModal({
                     className={`flex h-10 w-10 items-center justify-center rounded-lg border text-lg transition ${
                       icon === item.key
                         ? "border-ink bg-subtle scale-105 shadow-sm"
-                        : "border-line bg-white hover:bg-subtle text-muted"
+                        : "border-line bg-surface hover:bg-subtle text-muted"
                     }`}
                     title={item.label}
                   >
@@ -552,7 +552,7 @@ export default function ProjectSettingsModal({
               {statuses.map((s, idx) => (
                 <div
                   key={s.id}
-                  className="flex items-center justify-between gap-3 p-3 rounded-lg border border-line bg-white hover:border-line"
+                  className="flex items-center justify-between gap-3 p-3 rounded-lg border border-line bg-surface hover:border-line"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span
@@ -563,7 +563,7 @@ export default function ProjectSettingsModal({
                       <p className="text-sm font-medium text-ink flex items-center gap-2">
                         {s.name}
                         {s.is_done && (
-                          <span className="rounded bg-emerald-100 text-emerald-700 px-1.5 py-0.5 text-xs font-semibold uppercase">
+                          <span className="rounded bg-goodSoft text-good px-1.5 py-0.5 text-xs font-semibold uppercase">
                             Done Status
                           </span>
                         )}
@@ -605,7 +605,7 @@ export default function ProjectSettingsModal({
           )}
 
           {/* Add Status Form */}
-          <form onSubmit={handleAddStatus} className="card p-4 bg-subtle/50 space-y-3">
+          <form onSubmit={handleAddStatus} className="card p-4 bg-subtle space-y-3">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted">Add New Status</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="md:col-span-2">
@@ -625,7 +625,7 @@ export default function ProjectSettingsModal({
                     type="color"
                     value={newStatusColor}
                     onChange={(e) => setNewStatusColor(e.target.value)}
-                    className="h-9 w-12 cursor-pointer rounded border border-line p-1 bg-white"
+                    className="h-9 w-12 cursor-pointer rounded border border-line p-1 bg-surface"
                   />
                   <input
                     className="input font-mono uppercase text-xs"
@@ -666,12 +666,12 @@ export default function ProjectSettingsModal({
             </p>
           </div>
 
-          <div className="divide-y divide-line rounded-lg border border-line bg-white">
+          <div className="divide-y divide-line rounded-lg border border-line bg-surface">
             {memberList.map((m) => {
               const workload = m.workload ?? { total: 0, in_progress: 0, done: 0 };
               const isOwner = project.owner_id === m.user_id || m.role === "owner";
               return (
-                <div key={m.id} className="flex flex-wrap items-center justify-between gap-3 p-3.5 hover:bg-subtle/50">
+                <div key={m.id} className="flex flex-wrap items-center justify-between gap-3 p-3.5 hover:bg-subtle">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-accent text-xs font-semibold text-white">
                       {(m.user?.name || m.user?.username || "?").slice(0, 2).toUpperCase()}
@@ -680,7 +680,7 @@ export default function ProjectSettingsModal({
                       <p className="truncate text-sm font-medium text-ink flex items-center gap-1.5">
                         {m.user?.name || m.user?.username}
                         {isOwner && (
-                          <span className="rounded bg-amber-100 text-amber-800 px-1.5 py-0.2 text-xs font-bold">
+                          <span className="rounded bg-warnSoft text-warn px-1.5 py-0.2 text-xs font-bold">
                             Owner
                           </span>
                         )}
@@ -809,7 +809,7 @@ export default function ProjectSettingsModal({
           </div>
 
           {/* Archive / Restore */}
-          <div className="flex items-center justify-between p-4 rounded-lg border border-line bg-subtle/40">
+          <div className="flex items-center justify-between p-4 rounded-lg border border-line bg-subtle">
             <div>
               <p className="text-sm font-semibold text-ink">
                 {project.status === "archived" ? "Restore project" : "Archive project"}
@@ -835,7 +835,7 @@ export default function ProjectSettingsModal({
           </div>
 
           {/* Delete Project */}
-          <div className="flex items-center justify-between p-4 rounded-lg border border-rose-200 bg-rose-50/50">
+          <div className="flex items-center justify-between p-4 rounded-lg border border-danger bg-dangerSoft">
             <div>
               <p className="text-sm font-semibold text-danger">Delete project permanently</p>
               <p className="text-xs text-muted mt-0.5">

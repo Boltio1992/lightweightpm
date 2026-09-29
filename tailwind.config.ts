@@ -2,26 +2,31 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: ["./app/**/*.{js,ts,jsx,tsx,mdx}", "./components/**/*.{js,ts,jsx,tsx,mdx}"],
+  // Theme is driven by a class on <html> so the choice survives a hard reload
+  // and can be applied before first paint (see app/layout.tsx).
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
-        // Semantic colours are tuned for WCAG AA: every value below clears 4.5:1
-        // against white AND against its own soft background. Don't lighten them.
-        ink: "#37352f",
-        muted: "#6b6b66",
-        line: "#e6e4df",
-        canvas: "#ffffff",
-        subtle: "#f7f7f5",
-        surface: "#ffffff",
-        surfaceMuted: "#fbfbfa",
-        accent: "#185fa5",
-        accentSoft: "#e6f1fb",
-        danger: "#c0392b",
-        dangerSoft: "#fcebeb",
-        warn: "#854f0b",
-        warnSoft: "#faeeda",
-        good: "#3b6d11",
-        goodSoft: "#eaf3de",
+        // Every entry points at a CSS variable in app/globals.css, which is
+        // redefined under `.dark`. That keeps `bg-surface` / `text-ink` working
+        // unchanged in components while the theme flips. Light values are the
+        // WCAG-AA set — keep the two definitions in sync.
+        ink: "var(--color-ink)",
+        muted: "var(--color-muted)",
+        line: "var(--color-line)",
+        canvas: "var(--color-canvas)",
+        subtle: "var(--color-subtle)",
+        surface: "var(--color-surface)",
+        surfaceMuted: "var(--color-surface-muted)",
+        accent: "var(--color-accent)",
+        accentSoft: "var(--color-accent-soft)",
+        danger: "var(--color-danger)",
+        dangerSoft: "var(--color-danger-soft)",
+        warn: "var(--color-warn)",
+        warnSoft: "var(--color-warn-soft)",
+        good: "var(--color-good)",
+        goodSoft: "var(--color-good-soft)",
       },
       fontFamily: {
         sans: [

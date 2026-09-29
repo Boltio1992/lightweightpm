@@ -255,7 +255,15 @@ export default function TaskInspector({
   if (!task) return null;
 
   const currentStatusObj = projectStatuses.find((s) => s.key === status);
-  const statusColor = currentStatusObj?.color || (status === "done" ? "#10B981" : status === "in_progress" ? "#12A594" : status === "blocked" ? "#EF4444" : "#94A3B8");
+  const statusColor =
+    currentStatusObj?.color ||
+    (status === "done"
+      ? "var(--color-good)"
+      : status === "in_progress"
+      ? "var(--color-accent)"
+      : status === "blocked"
+      ? "var(--color-danger)"
+      : "var(--color-muted)");
   const overdue = isOverdue(task);
   const doneSubtasksCount = subtasks.filter((s) => s.status === "done").length;
 
@@ -267,16 +275,16 @@ export default function TaskInspector({
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: "100%", opacity: 0 }}
           transition={{ type: "spring", damping: 30, stiffness: 350 }}
-          className="relative flex h-full w-full max-w-xl flex-col bg-white shadow-2xl"
+          className="relative flex h-full w-full max-w-xl flex-col bg-surface shadow-2xl"
         >
           {/* Top Bar */}
-          <div className="safe-bottom flex items-center justify-between border-b border-line bg-subtle/50 px-4 py-3 sm:px-6 sm:py-3.5">
+          <div className="safe-bottom flex items-center justify-between border-b border-line bg-subtle px-4 py-3 sm:px-6 sm:py-3.5">
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted font-mono">
                 {task.parent_task_id ? "Sub-Task" : "Task Inspector"}
               </span>
               {saveSuccess && (
-                <span className="rounded bg-emerald-100 text-emerald-700 px-2 py-0.5 text-xs font-medium animate-pulse">
+                <span className="rounded bg-goodSoft text-good px-2 py-0.5 text-xs font-medium animate-pulse">
                   Saved
                 </span>
               )}
@@ -305,7 +313,7 @@ export default function TaskInspector({
           </div>
 
           {/* Quick Header Controls */}
-          <div className="flex flex-wrap items-center gap-3 border-b border-line bg-white px-4 py-3 sm:px-6">
+          <div className="flex flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-3 sm:px-6">
             {/* Status Select */}
             <div className="flex items-center gap-1.5">
               <span className="h-3 w-3 rounded-full flex-none" style={{ backgroundColor: statusColor }} />
@@ -378,7 +386,7 @@ export default function TaskInspector({
           </div>
 
           {/* Tab Navigation */}
-          <div className="scroll-x border-b border-line bg-white px-4 sm:px-6">
+          <div className="scroll-x border-b border-line bg-surface px-4 sm:px-6">
             <button
               onClick={() => setActiveTab("details")}
               className={`flex flex-none items-center whitespace-nowrap border-b-2 px-3 text-xs font-semibold transition ${
@@ -438,7 +446,7 @@ export default function TaskInspector({
                 </div>
 
                 {/* Progress bar + slider */}
-                <div className="card p-3.5 space-y-2 bg-subtle/30">
+                <div className="card p-3.5 space-y-2 bg-subtle">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-medium text-ink">Completion Progress</span>
                     <span className="font-semibold text-accent">{percentComplete}%</span>
@@ -564,9 +572,9 @@ export default function TaskInspector({
                   </div>
 
                   {subtasks.length > 0 && (
-                    <div className="divide-y divide-line rounded-lg border border-line bg-subtle/30">
+                    <div className="divide-y divide-line rounded-lg border border-line bg-subtle">
                       {subtasks.map((sub) => (
-                        <div key={sub.id} className="flex items-center gap-2.5 p-2.5 hover:bg-white transition">
+                        <div key={sub.id} className="flex items-center gap-2.5 p-2.5 hover:bg-surface transition">
                           <input
                             type="checkbox"
                             checked={sub.status === "done"}
@@ -619,7 +627,7 @@ export default function TaskInspector({
                     </p>
                   ) : (
                     comments.map((c) => (
-                      <div key={c.id} className="p-3 rounded-lg border border-line bg-subtle/30 space-y-1">
+                      <div key={c.id} className="p-3 rounded-lg border border-line bg-subtle space-y-1">
                         <div className="flex items-center justify-between text-xs">
                           <span className="font-semibold text-ink">
                             {c.user?.name || c.user?.username || "Collaborator"}
@@ -682,7 +690,7 @@ export default function TaskInspector({
           </div>
 
           {/* Footer Save Button */}
-          <div className="safe-bottom flex items-center justify-between border-t border-line bg-subtle/50 px-4 py-3 sm:px-6">
+          <div className="safe-bottom flex items-center justify-between border-t border-line bg-subtle px-4 py-3 sm:px-6">
             <span className="text-xs text-muted">
               {saving ? "Saving changes…" : "Auto-saving on blur"}
             </span>

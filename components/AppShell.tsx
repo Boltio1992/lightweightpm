@@ -7,6 +7,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Sidebar from "@/components/Sidebar";
 import CommandPalette from "@/components/CommandPalette";
 import TaskModal from "@/components/TaskModal";
+import ThemeToggle from "@/components/ThemeToggle";
 import { emitTasksChanged } from "@/lib/api";
 import { motionTransition } from "@/lib/motion";
 import type { UserPublic } from "@/types";
@@ -92,7 +93,7 @@ export default function AppShell({
   }, [mobileNavOpen]);
 
   return (
-    <div className="flex h-[100dvh] w-full overflow-hidden bg-white">
+    <div className="flex h-[100dvh] w-full overflow-hidden bg-surface">
       {/* Desktop sidebar */}
       <Sidebar
         user={user}
@@ -109,7 +110,7 @@ export default function AppShell({
           aria-label="Show sidebar"
           aria-expanded={false}
           title="Show sidebar (Ctrl/⌘ + B)"
-          className="fixed left-0 top-1/2 z-30 hidden h-14 w-6 -translate-y-1/2 items-center justify-center rounded-r-md border border-l-0 border-line bg-white text-muted shadow-card transition hover:w-7 hover:text-ink md:flex"
+          className="fixed left-0 top-1/2 z-30 hidden h-14 w-6 -translate-y-1/2 items-center justify-center rounded-r-md border border-l-0 border-line bg-surface text-muted shadow-card transition hover:w-7 hover:text-ink md:flex"
         >
           <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <path d="m9 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
@@ -124,7 +125,7 @@ export default function AppShell({
             type="button"
             onClick={() => setMobileNavOpen(true)}
             aria-label="Open navigation"
-            className="tap-icon -ml-1 rounded-md p-2 text-ink hover:bg-subtle active:bg-subtle/80 transition"
+            className="tap-icon -ml-1 rounded-md p-2 text-ink hover:bg-subtle active:bg-subtle transition"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="M4 7h16M4 12h16M4 17h16" strokeLinecap="round" />
@@ -132,6 +133,8 @@ export default function AppShell({
           </button>
 
           <span className="flex-1 text-sm font-semibold text-ink">LightPM</span>
+
+          <ThemeToggle compact />
 
           <button
             type="button"
@@ -166,7 +169,7 @@ export default function AppShell({
         {mobileNavOpen && (
           <>
             <motion.div
-              className="fixed inset-0 z-40 bg-ink/40 md:hidden"
+              className="fixed inset-0 z-40 bg-black/45 md:hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -193,7 +196,7 @@ export default function AppShell({
       </AnimatePresence>
 
       {/* Mobile tab bar — thumb-reachable primary navigation. */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-line bg-white/95 backdrop-blur md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-line bg-surface backdrop-blur md:hidden">
         {MOBILE_TABS.map((t) => {
           const active = pathname === t.href || pathname.startsWith(`${t.href}/`);
           return (

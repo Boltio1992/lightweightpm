@@ -2,11 +2,77 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Every semantic colour is a variable so the dark theme only has to redefine
+   the variables, never the components. Values are the WCAG-AA set from
+   tailwind.config.ts — see the comment there before changing one. */
 :root {
   --motion-fast: 130ms;
   --motion-normal: 190ms;
   --motion-slow: 260ms;
   --motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --color-canvas: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-muted: #fbfbfa;
+  --color-subtle: #f7f7f5;
+  --color-ink: #37352f;
+  --color-muted: #6b6b66;
+  --color-line: #e6e4df;
+
+  --color-accent: #185fa5;
+  --color-accent-soft: #e6f1fb;
+  --color-danger: #c0392b;
+  --color-danger-soft: #fcebeb;
+  --color-warn: #854f0b;
+  --color-warn-soft: #faeeda;
+  --color-good: #3b6d11;
+  --color-good-soft: #eaf3de;
+
+  --color-avatar-bg: #e6e4df;
+  --color-hairline: #eeece8;
+  --gantt-canvas: #ffffff;
+  --scrollbar-thumb: #e3e3e0;
+  --skeleton-a: #f2f2f0;
+  --skeleton-b: #e9e9e6;
+  --separator: #eaeaea;
+  --overlay-soft: rgb(0 0 0 / 0.2);
+  --overlay: rgb(0 0 0 / 0.25);
+  --overlay-strong: rgb(32 31 29 / 0.45);
+}
+
+.dark {
+  /* Not a mechanical inversion: surfaces stay a touch lighter than the canvas so
+     cards still read as raised, and every text colour clears 4.5:1 on the
+     surface it actually sits on. */
+  --color-canvas: #16161a;
+  --color-surface: #1e1e23;
+  --color-surface-muted: #232329;
+  --color-subtle: #26262c;
+  --color-ink: #ecebe7;
+  --color-muted: #a3a29c;
+  --color-line: #34343c;
+
+  --color-accent: #7cb2ea;
+  --color-accent-soft: #16283d;
+  --color-danger: #f08a80;
+  --color-danger-soft: #33191a;
+  --color-warn: #e0ac57;
+  --color-warn-soft: #302413;
+  --color-good: #93c667;
+  --color-good-soft: #1e2a15;
+
+  --color-avatar-bg: #34343c;
+  --color-hairline: #2b2b32;
+  --gantt-canvas: #1a1a1f;
+  --scrollbar-thumb: #3a3a42;
+  --skeleton-a: #26262c;
+  --skeleton-b: #32323a;
+  --separator: #2b2b32;
+  --overlay-soft: rgb(0 0 0 / 0.5);
+  --overlay: rgb(0 0 0 / 0.55);
+  --overlay-strong: rgb(0 0 0 / 0.65);
+
+  color-scheme: dark;
 }
 
 html,
@@ -18,11 +84,18 @@ body {
 }
 
 body {
-  color: #37352f;
-  background: #ffffff;
+  color: var(--color-ink);
+  background: var(--color-canvas);
   line-height: 1.45;
   /* Kill the grey flash iOS/Android paint on tap — makes the UI feel native. */
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Native widgets (checkboxes, date pickers, scrollbars) follow the theme. */
+input,
+select,
+textarea {
+  color-scheme: inherit;
 }
 
 /* Never let a long word blow out the layout on narrow screens. */
@@ -31,7 +104,7 @@ h1, h2, h3, p, span, a, button, label {
 }
 
 * {
-  border-color: #eaeaea;
+  border-color: var(--separator);
 }
 
 /* Smooth, momentum-friendly scrolling inside the app shell. */
@@ -52,7 +125,7 @@ h1, h2, h3, p, span, a, button, label {
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #e3e3e0;
+  background: var(--scrollbar-thumb);
   border-radius: 8px;
 }
 ::-webkit-scrollbar-track {
@@ -237,12 +310,19 @@ h1, h2, h3, p, span, a, button, label {
     width: 24px;
     height: 24px;
     font-size: 12px;
-    background: #e6e4df;
-    color: #37352f;
+    background: var(--color-avatar-bg);
+    color: var(--color-ink);
   }
 
   /* Timeline rows. The bar is a real button, so on touch the row grows to 44px
      and the bar with it — a 20px sliver is impossible to hit with a thumb. */
+  .gantt-month-band {
+    height: 26px;
+  }
+  /* Day zoom stacks a weekday initial over the date, so it needs the extra room. */
+  .gantt-month-band + * {
+    height: 26px;
+  }
   .gantt-row {
     height: 36px;
   }
@@ -388,11 +468,14 @@ h1, h2, h3, p, span, a, button, label {
       height: 28px;
     }
   }
+  /* Colour tokens are CSS variables, so Tailwind's `/opacity` modifier cannot
+     apply to them — `bg-accent/90` would compile to nothing. Brightness is used
+     for the hover state instead, which works in both themes. */
   .btn-primary {
-    @apply btn border-accent bg-accent text-white hover:bg-accent/90;
+    @apply btn border-accent bg-accent text-white hover:brightness-110;
   }
   .btn-danger {
-    @apply btn border-danger text-danger hover:bg-danger/5;
+    @apply btn border-danger text-danger hover:bg-dangerSoft;
   }
   .input {
     @apply w-full rounded-md border border-line bg-surface px-3 py-1.5 text-sm text-ink outline-none transition focus:border-accent focus:ring-1 focus:ring-accent;
@@ -422,7 +505,7 @@ h1, h2, h3, p, span, a, button, label {
   }
   .skeleton {
     @apply rounded-md;
-    background: linear-gradient(90deg, #f2f2f0 0%, #e9e9e6 50%, #f2f2f0 100%);
+    background: linear-gradient(90deg, var(--skeleton-a) 0%, var(--skeleton-b) 50%, var(--skeleton-a) 100%);
     background-size: 200% 100%;
     animation: app-skeleton 1.2s linear infinite;
   }
