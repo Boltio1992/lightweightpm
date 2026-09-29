@@ -11,11 +11,13 @@ export default function CommandPalette({
   onClose,
   onOpenNewTask,
   onOpenNewProject,
+  onToggleSidebar,
 }: {
   open: boolean;
   onClose: () => void;
   onOpenNewTask?: () => void;
   onOpenNewProject?: () => void;
+  onToggleSidebar?: () => void;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -91,6 +93,15 @@ export default function CommandPalette({
       run: () => {
         onClose();
         onOpenNewProject?.();
+      },
+    },
+    {
+      id: "action-toggle-sidebar",
+      title: "Toggle sidebar",
+      category: "Action",
+      run: () => {
+        onClose();
+        onToggleSidebar?.();
       },
     },
     {

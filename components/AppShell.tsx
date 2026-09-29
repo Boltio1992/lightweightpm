@@ -11,6 +11,9 @@ import { emitTasksChanged } from "@/lib/api";
 import { motionTransition } from "@/lib/motion";
 import type { UserPublic } from "@/types";
 
+/** Persisted so the sidebar stays where you left it between visits. */
+const SIDEBAR_COLLAPSED_KEY = "lightpm:sidebar-collapsed";
+
 export default function AppShell({
   user,
   children,
@@ -30,12 +33,42 @@ export default function AppShell({
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [newTaskModalOpen, setNewTaskModalOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  // Starts false so server and client render the same markup; the stored value
+  // (already applied to <html> by the inline script in the layout) is picked up
+  // on mount so there is no flash of an expanded sidebar.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  function toggleSidebar() {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, next ? "1" : "0");
+      } catch {
+        /* Private mode — the preference just won't persist. */
+      }
+      document.documentElement.classList.toggle("sidebar-collapsed", next);
+      return next;
+    });
+  }
+
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1") setSidebarCollapsed(true);
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setCommandPaletteOpen((prev) => !prev);
+      }
+      // Ctrl/⌘ + B hides or shows the sidebar — same muscle memory as an editor.
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        toggleSidebar();
       }
       if (e.key === "Escape") setMobileNavOpen(false);
     }
@@ -64,8 +97,25 @@ export default function AppShell({
       <Sidebar
         user={user}
         onOpenSearch={() => setCommandPaletteOpen(true)}
-        className="hidden md:flex"
+        onCollapse={toggleSidebar}
+        className={`app-sidebar ${sidebarCollapsed ? "hidden" : "hidden md:flex"}`}
       />
+
+      {/* Collapsed: an edge tab brings it back without eating any content width. */}
+      {sidebarCollapsed && (
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          aria-label="Show sidebar"
+          aria-expanded={false}
+          title="Show sidebar (Ctrl/⌘ + B)"
+          className="fixed left-0 top-1/2 z-30 hidden h-14 w-6 -translate-y-1/2 items-center justify-center rounded-r-md border border-l-0 border-line bg-white text-muted shadow-card transition hover:w-7 hover:text-ink md:flex"
+        >
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path d="m9 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      )}
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile top bar */}
@@ -177,6 +227,7 @@ export default function AppShell({
         open={commandPaletteOpen}
         onClose={() => setCommandPaletteOpen(false)}
         onOpenNewTask={() => setNewTaskModalOpen(true)}
+        onToggleSidebar={toggleSidebar}
       />
 
       <TaskModal

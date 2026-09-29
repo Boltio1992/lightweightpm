@@ -46,12 +46,15 @@ export default function Sidebar({
   user,
   onOpenSearch,
   onNavigate,
+  onCollapse,
   className = "",
 }: {
   user: UserPublic;
   onOpenSearch?: () => void;
   /** Called after any navigation — used to auto-close the mobile drawer. */
   onNavigate?: () => void;
+  /** When provided, the header shows a collapse button (desktop rail only). */
+  onCollapse?: () => void;
   className?: string;
 }) {
   const pathname = usePathname();
@@ -78,7 +81,22 @@ export default function Sidebar({
         <div className="flex h-7 w-7 items-center justify-center rounded-md bg-ink text-xs font-semibold text-white">
           L
         </div>
-        <span className="text-sm font-semibold text-ink">LightPM</span>
+        <span className="flex-1 truncate text-sm font-semibold text-ink">LightPM</span>
+        {onCollapse && (
+          <button
+            type="button"
+            onClick={onCollapse}
+            aria-label="Hide sidebar"
+            title="Hide sidebar (Ctrl/⌘ + B)"
+            className="-mr-1 rounded-md p-1 text-muted transition hover:bg-white hover:text-ink"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <rect x="3" y="4" width="18" height="16" rx="2.5" />
+              <path d="M10 4v16" strokeLinecap="round" />
+              <path d="m7.5 9.5-2 2.5 2 2.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {onOpenSearch && (

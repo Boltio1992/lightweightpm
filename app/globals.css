@@ -273,6 +273,13 @@ h1, h2, h3, p, span, a, button, label {
   }
 }
 
+/* Sidebar collapse — the class is set by an inline script before first paint so
+   a collapsed sidebar never flashes open on reload. React takes over after
+   hydration and keeps the class in sync. */
+html.sidebar-collapsed .app-sidebar {
+  display: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
