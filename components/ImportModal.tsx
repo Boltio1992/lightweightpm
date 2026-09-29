@@ -155,8 +155,8 @@ export default function ImportModal({
               <IssueList title="Warnings" tone="warning" issues={result.warnings} />
             )}
 
-            <div className="flex justify-end border-t border-line pt-3">
-              <button type="button" onClick={onClose} className="btn-primary tap">
+            <div className="sheet-actions">
+              <button type="button" onClick={onClose} className="btn-primary tap w-full sm:w-auto">
                 Done
               </button>
             </div>

@@ -362,23 +362,27 @@ export default function ProjectDetailPage() {
           </div>
         </div>
 
-        {/* View tabs — a segmented control reads as "one of four", not "four links". */}
+        {/* View tabs — a segmented control reads as "one of four", not "four
+            links". Wrapped in .scroll-x so a 360px phone scrolls the strip
+            instead of pushing the page sideways. */}
         <div className="mt-4 sm:mt-5">
-          <div className="seg" role="tablist" aria-label="Project views">
-            {TABS.map((t) => (
-              <button
-                key={t.key}
-                role="tab"
-                aria-selected={tab === t.key}
-                onClick={() => setTab(t.key)}
-                className={`seg-item ${tab === t.key ? "seg-item-on" : ""}`}
-              >
-                {t.label}
-                {t.count !== undefined && t.count > 0 && (
-                  <span className="ml-1.5 rounded-full bg-subtle px-1.5 text-xs text-muted">{t.count}</span>
-                )}
-              </button>
-            ))}
+          <div className="scroll-x">
+              <div className="seg" role="tablist" aria-label="Project views">
+                {TABS.map((t) => (
+                  <button
+                    key={t.key}
+                    role="tab"
+                    aria-selected={tab === t.key}
+                    onClick={() => setTab(t.key)}
+                    className={`seg-item ${tab === t.key ? "seg-item-on" : ""}`}
+                  >
+                    {t.label}
+                    {t.count !== undefined && t.count > 0 && (
+                      <span className="ml-1.5 rounded-full bg-subtle px-1.5 text-xs text-muted">{t.count}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
           </div>
         </div>
       </div>

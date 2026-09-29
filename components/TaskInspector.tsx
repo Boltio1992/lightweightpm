@@ -310,7 +310,7 @@ export default function TaskInspector({
             <div className="flex items-center gap-1.5">
               <span className="h-3 w-3 rounded-full flex-none" style={{ backgroundColor: statusColor }} />
               <select
-                className="text-xs font-medium bg-transparent border-0 text-ink cursor-pointer focus:ring-0 p-0"
+                className="tap-field text-xs font-medium bg-transparent border-0 text-ink cursor-pointer focus:ring-0 p-0"
                 value={status}
                 onChange={(e) => {
                   setStatus(e.target.value);
@@ -339,7 +339,7 @@ export default function TaskInspector({
             <div className="flex items-center gap-1">
               <PriorityBadge priority={priority} />
               <select
-                className="text-xs bg-transparent border-0 text-muted cursor-pointer focus:ring-0 p-0 capitalize"
+                className="tap-field text-xs bg-transparent border-0 text-muted cursor-pointer focus:ring-0 p-0 capitalize"
                 value={priority}
                 onChange={(e) => {
                   const p = e.target.value as TaskPriority;
@@ -360,7 +360,7 @@ export default function TaskInspector({
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-muted">Assignee:</span>
               <select
-                className="text-xs bg-transparent border-0 text-ink cursor-pointer focus:ring-0 p-0 font-medium"
+                className="tap-field text-xs bg-transparent border-0 text-ink cursor-pointer focus:ring-0 p-0 font-medium"
                 value={assigneeId}
                 onChange={(e) => {
                   setAssigneeId(e.target.value);
@@ -500,7 +500,7 @@ export default function TaskInspector({
                       <button
                         type="button"
                         onClick={() => setShowTagInput(true)}
-                        className="text-xs text-accent hover:underline"
+                        className="tap rounded px-2 text-xs text-accent hover:underline"
                       >
                         + Add Tag
                       </button>
@@ -516,7 +516,7 @@ export default function TaskInspector({
                         <button
                           type="button"
                           onClick={() => removeTag(t)}
-                          className="text-muted hover:text-danger ml-0.5"
+                          className="tap-icon ml-0.5 rounded text-muted hover:text-danger"
                         >
                           ×
                         </button>
@@ -530,15 +530,15 @@ export default function TaskInspector({
                           onChange={(e) => setNewTagInput(e.target.value)}
                           onKeyDown={addTag}
                           placeholder="tag name…"
-                          className="h-6 w-24 rounded border border-line px-1.5 text-xs text-ink focus:border-accent focus:outline-none"
+                          className="tap-field w-28 rounded border border-line px-2 text-xs text-ink focus:border-accent focus:outline-none"
                         />
-                        <button type="button" onClick={addTag} className="text-xs text-accent font-medium">
+                        <button type="button" onClick={addTag} className="tap rounded px-2 text-xs text-accent font-medium">
                           Add
                         </button>
                         <button
                           type="button"
                           onClick={() => setShowTagInput(false)}
-                          className="text-xs text-muted"
+                          className="tap rounded px-2 text-xs text-muted"
                         >
                           Cancel
                         </button>
@@ -571,7 +571,7 @@ export default function TaskInspector({
                             type="checkbox"
                             checked={sub.status === "done"}
                             onChange={() => toggleSubtask(sub)}
-                            className="h-4 w-4 rounded border-line text-accent cursor-pointer"
+                            className="task-check h-4 w-4 rounded border-line text-accent cursor-pointer"
                           />
                           <span
                             className={`flex-1 text-xs truncate ${

@@ -188,13 +188,19 @@ export default function CommandPalette({
   let flatIndex = 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-xs pt-20 px-4">
+    // Phones: a near-full-screen sheet anchored to the bottom, so the whole
+    // thing stays above the on-screen keyboard and every row is in thumb reach.
+    // From sm up: the usual floating palette near the top of the screen.
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-xs sm:items-start sm:px-4 sm:pt-20">
       <div
-        className="w-full max-w-xl rounded-xl border border-line bg-white shadow-2xl overflow-hidden flex flex-col max-h-[75vh]"
+        className="flex h-[100dvh] w-full max-w-xl flex-col overflow-hidden rounded-none border border-line bg-white shadow-2xl sm:h-auto sm:max-h-[75vh] sm:rounded-xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input Bar */}
-        <div className="flex items-center gap-3 border-b border-line px-4 py-3 bg-subtle/30">
+        <div
+          className="flex flex-none items-center gap-3 border-b border-line bg-subtle/30 px-4 py-3"
+          style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)" }}
+        >
           <svg className="h-5 w-5 text-muted flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.3-4.3" />
@@ -205,16 +211,30 @@ export default function CommandPalette({
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type a command or search projects & tasks…"
-            className="w-full bg-transparent text-sm text-ink placeholder:text-muted focus:outline-none"
+            className="tap-field w-full bg-transparent text-sm text-ink placeholder:text-muted focus:outline-none"
           />
-          {loading && <span className="text-xs text-muted">Searching…</span>}
+          {loading && <span className="flex-none text-xs text-muted">Searching…</span>}
+          {/* A keyboard has Esc; a phone does not. */}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close search"
+            className="tap tap-icon -mr-2 flex-none text-muted hover:text-ink sm:hidden"
+          >
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M6 6l12 12M18 6l-12 12" strokeLinecap="round" />
+            </svg>
+          </button>
           <kbd className="hidden sm:inline-block rounded border border-line bg-white px-1.5 py-0.5 text-xs font-mono text-muted">
             ESC
           </kbd>
         </div>
 
         {/* Results List */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-4">
+        <div
+          className="flex-1 overflow-y-auto p-2 space-y-4"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.5rem)" }}
+        >
           {/* Actions */}
           {filteredActions.length > 0 && (
             <div>
@@ -232,7 +252,7 @@ export default function CommandPalette({
                       type="button"
                       onClick={action.run}
                       onMouseEnter={() => setSelectedIndex(currentIndex)}
-                      className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs transition ${
+                      className={`tap-row w-full justify-between rounded-lg px-3 py-2 text-left text-xs transition ${
                         isSelected ? "bg-ink text-white" : "text-ink hover:bg-subtle"
                       }`}
                     >
@@ -267,7 +287,7 @@ export default function CommandPalette({
                         router.push(`/projects/${p.id}`);
                       }}
                       onMouseEnter={() => setSelectedIndex(currentIndex)}
-                      className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs transition ${
+                      className={`tap-row w-full justify-between rounded-lg px-3 py-2 text-left text-xs transition ${
                         isSelected ? "bg-ink text-white" : "text-ink hover:bg-subtle"
                       }`}
                     >
@@ -306,7 +326,7 @@ export default function CommandPalette({
                         }
                       }}
                       onMouseEnter={() => setSelectedIndex(currentIndex)}
-                      className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs transition ${
+                      className={`tap-row w-full justify-between rounded-lg px-3 py-2 text-left text-xs transition ${
                         isSelected ? "bg-ink text-white" : "text-ink hover:bg-subtle"
                       }`}
                     >
@@ -333,8 +353,8 @@ export default function CommandPalette({
           )}
         </div>
 
-        {/* Footer shortcuts */}
-        <div className="flex items-center justify-between border-t border-line px-4 py-2 bg-subtle/50 text-xs text-muted">
+        {/* Footer shortcuts — keyboard hints are noise on a touch device. */}
+        <div className="hidden flex-none items-center justify-between border-t border-line px-4 py-2 bg-subtle/50 text-xs text-muted sm:flex">
           <span>Navigate with <kbd className="font-mono">↑</kbd> <kbd className="font-mono">↓</kbd></span>
           <span>Select with <kbd className="font-mono">Enter</kbd></span>
         </div>

@@ -34,6 +34,19 @@ export type ResilientInsertResult<T> = {
  * Callers should surface `droppedColumns` to the user so they know to run the
  * pending migration and reload the PostgREST schema cache.
  */
+/**
+ * Loud, greppable warning. A dropped column means the row was written WITHOUT
+ * that field — the data looks "lost" in the UI — so it must be visible in the
+ * server logs, not just in the response.
+ */
+function warnMissingColumn(table: string, column: string) {
+  console.error(
+    `[LightPM][schema-drift] "${table}" has no column "${column}" in the database — the row was saved WITHOUT it. ` +
+      `Run supabase/migrations/*_sync_all_columns.sql and "notify pgrst, 'reload schema';". ` +
+      `Full list of missing columns: GET /api/health/schema (admin) or "npm run db:check".`
+  );
+}
+
 export async function insertSkippingMissingColumns<T = Record<string, any>>(
   table: string,
   rows: Array<Record<string, unknown>>,
@@ -58,6 +71,7 @@ export async function insertSkippingMissingColumns<T = Record<string, any>>(
     }
 
     dropped.push(column);
+    warnMissingColumn(table, column);
     payload = payload.map((row) => {
       const copy = { ...row };
       delete copy[column];
@@ -101,6 +115,7 @@ export async function updateSkippingMissingColumns<T = Record<string, any>>(
     }
 
     dropped.push(column);
+    warnMissingColumn(table, column);
     const copy = { ...payload };
     delete copy[column];
     payload = copy;

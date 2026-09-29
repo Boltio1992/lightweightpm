@@ -218,7 +218,7 @@ export default function ProjectsPage() {
                 <button
                   key={f.key}
                   onClick={() => setFilter(f.key)}
-                  className={`flex flex-none items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium transition sm:px-2.5 sm:py-1 ${
+                  className={`tap-tab flex-none gap-1.5 whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium transition sm:px-2.5 sm:py-1 ${
                     filter === f.key ? "bg-ink text-white" : "text-muted hover:bg-subtle"
                   }`}
                 >
@@ -249,7 +249,7 @@ export default function ProjectsPage() {
                 <button
                   type="button"
                   onClick={() => setSearch("")}
-                  className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded text-muted hover:bg-subtle hover:text-ink"
+                  className="tap-icon absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 rounded text-muted hover:bg-subtle hover:text-ink"
                   aria-label="Clear search"
                 >
                   ✕
@@ -335,14 +335,16 @@ export default function ProjectsPage() {
           </div>
         ) : (
           <>
-            <div className="card hidden overflow-hidden md:block">
+            {/* Table from lg up only: at 768–1023px these columns cannot fit
+                beside the sidebar and the actions cell gets clipped. */}
+            <div className="card hidden overflow-hidden lg:block">
               <div className="proj-grid border-b border-line bg-subtle px-3 py-2 text-xs font-medium text-muted">
                 <span>Project</span>
                 <span>Status</span>
                 <span>Progress</span>
                 <span>Tasks</span>
                 <span>Deadline</span>
-                <span className="hidden lg:block">Owner</span>
+                <span className="hidden xl:block">Owner</span>
                 <span />
               </div>
               {shown.map((p) => {
@@ -391,7 +393,7 @@ export default function ProjectsPage() {
                       <ProjectDeadline project={p} />
                     </span>
 
-                    <div className="hidden min-w-0 items-center gap-1.5 lg:flex">
+                    <div className="hidden min-w-0 items-center gap-1.5 xl:flex">
                       {ownerName ? (
                         <>
                           <span className="avatar">{initials(ownerName)}</span>
@@ -415,7 +417,7 @@ export default function ProjectsPage() {
               })}
             </div>
 
-            <div className="grid grid-cols-1 gap-3 md:hidden">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:hidden">
               {shown.map((p) => (
                 <ProjectCard
                   key={p.id}
@@ -522,7 +524,9 @@ export default function ProjectsPage() {
 
           {error && <p className="text-sm text-danger">{error}</p>}
 
-          <div className="flex flex-col-reverse gap-2 border-t border-line pt-3 sm:flex-row sm:justify-end">
+          {/* Sticky on phones (thumb reach, survives the keyboard), an
+              ordinary right-aligned row from sm up. */}
+          <div className="sheet-actions">
             <button type="button" onClick={() => setOpen(false)} className="btn tap w-full sm:w-auto">
               Cancel
             </button>

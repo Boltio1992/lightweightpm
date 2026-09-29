@@ -113,7 +113,7 @@ export default function TasksPage() {
                 <button
                   key={s.k}
                   onClick={() => setScope(s.k)}
-                  className={`relative flex flex-none items-center whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium transition sm:py-1 ${
+                  className={`tap-tab relative flex-none whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium transition sm:py-1 ${
                     scope === s.k ? "text-ink" : "text-muted hover:text-ink"
                   }`}
                 >
@@ -142,7 +142,7 @@ export default function TasksPage() {
                 <button
                   key={v.k}
                   onClick={() => setView(v.k)}
-                  className={`relative flex flex-none items-center whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium transition sm:py-1 ${
+                  className={`tap-tab relative flex-none whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium transition sm:py-1 ${
                     view === v.k ? "text-ink" : "text-muted hover:text-ink"
                   }`}
                 >

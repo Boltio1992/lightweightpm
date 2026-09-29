@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Modal from "./Modal";
 import { api, calculateDueDate } from "@/lib/api";
+import { fmtDate } from "@/lib/format";
 import type { ProjectStatus, Task, UserPublic } from "@/types";
 
 export default function TaskModal({
@@ -44,6 +45,13 @@ export default function TaskModal({
     setCalculatedDueDate(calculated);
   }, [startDate, durationDays]);
 
+  // The form reset below must key off primitives. `projectStatuses` falls back
+  // to a fresh `[]` literal on every render (and callers may pass inline
+  // arrays), so comparing it by identity re-ran the reset after every keystroke
+  // and wiped the field being typed — the inputs looked dead.
+  const taskId = task?.id ?? null;
+  const statusKey = projectStatuses.map((s) => s.key).join("|");
+
   useEffect(() => {
     if (!open) return;
     setError(null);
@@ -58,7 +66,8 @@ export default function TaskModal({
     setPercentComplete(String(task?.percent_complete ?? 0));
     setTags(task?.tags ?? []);
     setTagInput("");
-  }, [open, task, projectStatuses]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on taskId/statusKey (see above), not object identity
+  }, [open, taskId, statusKey]);
 
   function handleAddTag(e: React.KeyboardEvent | React.MouseEvent) {
     if ("key" in e && e.key !== "Enter") return;
@@ -109,7 +118,7 @@ export default function TaskModal({
 
   const heading = task ? "Edit task" : parentTaskId ? "New sub-task" : projectId ? "New project task" : "New task";
   return (
-    <Modal open={open} onClose={onClose} title={heading}>
+    <Modal open={open} onClose={onClose} title={heading} stickyFooter>
       <form onSubmit={save} className="space-y-3">
         <div>
           <label className="label">Title</label>
@@ -170,7 +179,14 @@ export default function TaskModal({
             {tags.map((t) => (
               <span key={t} className="inline-flex items-center gap-1 rounded bg-subtle px-2 py-0.5 text-xs text-ink border border-line">
                 #{t}
-                <button type="button" onClick={() => handleRemoveTag(t)} className="text-muted hover:text-danger">×</button>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveTag(t)}
+                  className="-my-2 px-1.5 py-2 text-muted hover:text-danger"
+                  aria-label={`Remove tag ${t}`}
+                >
+                  ×
+                </button>
               </span>
             ))}
           </div>
@@ -207,15 +223,20 @@ export default function TaskModal({
             <label className="label">Due</label>
             <input type="date" className="input" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
             {calculatedDueDate && !dueDate && (
-              <p className="mt-1 text-xs text-muted">Auto-calculated: {new Date(calculatedDueDate + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</p>
+              <p className="mt-1 text-xs text-muted">Auto-calculated: {fmtDate(calculatedDueDate)}</p>
             )}
           </div>
         </div>
         {error && <p className="text-sm text-danger">{error}</p>}
-        {/* Stacked full-width on phones so both are easy to hit with a thumb. */}
-        <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
-          <button type="button" onClick={onClose} className="btn tap w-full sm:w-auto">Cancel</button>
-          <button className="btn-primary tap w-full sm:w-auto" disabled={saving}>{saving ? "Saving…" : task ? "Save changes" : "Create task"}</button>
+        {/* Sticky bar on phones (thumb reach, never hidden behind the
+            keyboard), plain right-aligned row from sm up. */}
+        <div className="sheet-actions">
+          <button type="button" onClick={onClose} className="btn tap w-full sm:w-auto">
+            Cancel
+          </button>
+          <button className="btn-primary tap w-full sm:w-auto" disabled={saving}>
+            {saving ? "Saving…" : task ? "Save changes" : "Create task"}
+          </button>
         </div>
       </form>
     </Modal>

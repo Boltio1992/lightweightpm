@@ -15,7 +15,8 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { PriorityBadge } from "./Badges";
-import { api, fmtDate, isOverdue } from "@/lib/api";
+import { api, isOverdue } from "@/lib/api";
+import { fmtDate } from "@/lib/format";
 import { fadeScale, motionTransition } from "@/lib/motion";
 import { TASK_STATUSES, type Task, type TaskStatus } from "@/types";
 
@@ -94,7 +95,7 @@ function Card({
       <div className="mt-2 flex flex-col gap-1 text-xs">
         {task.start_date && (
           <span className="text-muted">
-            Start: {new Date(task.start_date + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+            Start: {fmtDate(task.start_date, { year: false })}
           </span>
         )}
         <div className="flex items-center justify-between">

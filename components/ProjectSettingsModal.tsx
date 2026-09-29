@@ -366,11 +366,11 @@ export default function ProjectSettingsModal({
 
   return (
     <Modal open={open} onClose={onClose} title="Project Settings" width="max-w-3xl">
-      <div className="flex border-b border-line -mt-1 mb-5">
+      <div className="scroll-x -mt-1 mb-5 border-b border-line">
         <button
           type="button"
           onClick={() => setTab("general")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition ${
+          className={`tap-tab px-4 py-2 text-sm font-medium border-b-2 transition ${
             tab === "general" ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"
           }`}
         >
@@ -379,7 +379,7 @@ export default function ProjectSettingsModal({
         <button
           type="button"
           onClick={() => setTab("workflow")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition ${
+          className={`tap-tab px-4 py-2 text-sm font-medium border-b-2 transition ${
             tab === "workflow" ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"
           }`}
         >
@@ -388,7 +388,7 @@ export default function ProjectSettingsModal({
         <button
           type="button"
           onClick={() => setTab("members")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition ${
+          className={`tap-tab px-4 py-2 text-sm font-medium border-b-2 transition ${
             tab === "members" ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"
           }`}
         >
@@ -397,7 +397,7 @@ export default function ProjectSettingsModal({
         <button
           type="button"
           onClick={() => setTab("danger")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition ${
+          className={`tap-tab px-4 py-2 text-sm font-medium border-b-2 transition ${
             tab === "danger" ? "border-danger text-danger font-semibold" : "border-transparent text-muted hover:text-danger"
           }`}
         >
@@ -520,7 +520,9 @@ export default function ProjectSettingsModal({
 
           {generalError && <p className="text-sm text-danger">{generalError}</p>}
 
-          <div className="flex flex-col-reverse gap-2 border-t border-line pt-3 sm:flex-row sm:justify-end">
+          {/* Sticky on phones: the general form is long enough that a footer
+              button at the end of the scroll would be off-screen. */}
+          <div className="sheet-actions">
             <button type="button" onClick={onClose} className="btn tap w-full sm:w-auto">
               Cancel
             </button>
@@ -575,7 +577,7 @@ export default function ProjectSettingsModal({
                       type="button"
                       disabled={idx === 0}
                       onClick={() => moveStatus(idx, "up")}
-                      className="p-1 rounded text-muted hover:text-ink disabled:opacity-30 disabled:hover:text-muted"
+                      className="tap-icon p-1 text-muted hover:text-ink disabled:opacity-30 disabled:hover:text-muted"
                       title="Move up"
                     >
                       ▲
@@ -584,7 +586,7 @@ export default function ProjectSettingsModal({
                       type="button"
                       disabled={idx === statuses.length - 1}
                       onClick={() => moveStatus(idx, "down")}
-                      className="p-1 rounded text-muted hover:text-ink disabled:opacity-30 disabled:hover:text-muted"
+                      className="tap-icon p-1 text-muted hover:text-ink disabled:opacity-30 disabled:hover:text-muted"
                       title="Move down"
                     >
                       ▼
@@ -592,7 +594,7 @@ export default function ProjectSettingsModal({
                     <button
                       type="button"
                       onClick={() => deleteStatus(s.id)}
-                      className="ml-2 text-xs text-danger hover:underline"
+                      className="tap ml-2 rounded px-2 text-xs text-danger hover:underline"
                     >
                       Delete
                     </button>
@@ -691,7 +693,7 @@ export default function ProjectSettingsModal({
 
                   <div className="flex items-center gap-3">
                     <select
-                      className="input py-1 text-xs w-auto font-medium"
+                      className="input tap-field py-1 text-xs w-auto font-medium"
                       value={m.role}
                       disabled={updatingMemberId === m.id}
                       onChange={(e) => updateMemberRole(m.id, e.target.value)}
@@ -705,7 +707,7 @@ export default function ProjectSettingsModal({
                     <button
                       type="button"
                       onClick={() => removeMember(m.id)}
-                      className="text-xs text-muted hover:text-danger px-1"
+                      className="tap rounded px-2 text-xs text-muted hover:text-danger"
                     >
                       Remove
                     </button>

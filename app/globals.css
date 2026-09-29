@@ -139,6 +139,16 @@ h1, h2, h3, p, span, a, button, label {
     }
   }
 
+  /* Phones: the caret and the done checkbox are the two controls people hit
+     most, so their columns get extra room. A full 44px each would eat a
+     quarter of a 360px screen, so the width stops at 32px — the row itself is
+     already 44px tall, which is what the thumb actually lands on. */
+  @media (max-width: 639px) {
+    .row-grid {
+      grid-template-columns: 32px 32px minmax(0, 1fr) auto;
+    }
+  }
+
   /* Segmented control — used for view switchers and the timeline zoom. */
   .seg {
     @apply inline-flex flex-none items-center gap-0.5 rounded-md border border-line bg-subtle p-0.5;
@@ -151,31 +161,68 @@ h1, h2, h3, p, span, a, button, label {
     @apply bg-surface text-ink shadow-soft;
   }
 
-  /* Column template shared by the projects table header and every row.
-     Cell order: name, status, progress, tasks, deadline, owner (lg+), actions. */
+  /* Column template shared by the projects table header and every row. Only
+     rendered from lg up — below that the list falls back to project cards,
+     because these columns cannot fit next to the sidebar on a tablet.
+     Cell order: name, status, progress, tasks, deadline, owner (xl+), actions.
+     Widths are chosen so the row still fits a 1024px screen with the sidebar
+     open (~752px of content), which is the narrowest viewport that shows it. */
   .proj-grid {
     display: grid;
     align-items: center;
     column-gap: 12px;
-    grid-template-columns: minmax(0, 1fr) 130px 170px 100px 120px 44px;
+    grid-template-columns: minmax(0, 1fr) 110px 140px 80px 110px 44px;
   }
-  @media (min-width: 1024px) {
+  @media (min-width: 1280px) {
     .proj-grid {
-      grid-template-columns: minmax(0, 1fr) 130px 170px 100px 120px 150px 44px;
+      grid-template-columns: minmax(0, 1fr) 120px 170px 90px 120px 150px 44px;
     }
   }
 
   /* Project health rows: name, health, progress, tasks, deadline — with the
-     status column joining in from lg up. */
+     status column joining in from lg up. Sized to fit a 768px tablet with the
+     sidebar open (~496px of content). */
   .health-grid {
     display: grid;
     align-items: center;
     column-gap: 12px;
-    grid-template-columns: minmax(0, 1fr) 96px 150px 80px 100px;
+    grid-template-columns: minmax(0, 1fr) 96px 130px 70px 90px;
   }
   @media (min-width: 1024px) {
     .health-grid {
       grid-template-columns: minmax(0, 1fr) 120px 110px 180px 90px 110px;
+    }
+  }
+  /* Five fixed columns (~474px) do not fit a 360px phone, so below sm every
+     row becomes a stacked card:
+       row 1 name · row 2 health + tasks · row 3 progress · row 4 deadline
+     Child order is fixed by DashboardView: name, status, health, progress,
+     tasks, deadline. The status cell is display:none until lg — that removes
+     it from the grid but not from the nth-child count, hence the gaps. */
+  @media (max-width: 639px) {
+    .health-grid {
+      grid-template-columns: minmax(0, 1fr) auto;
+      row-gap: 6px;
+    }
+    .health-grid > :nth-child(1) {
+      grid-column: 1 / -1;
+    }
+    .health-grid > :nth-child(3) {
+      grid-column: 1;
+      grid-row: 2;
+    }
+    .health-grid > :nth-child(5) {
+      grid-column: 2;
+      grid-row: 2;
+      justify-self: end;
+    }
+    .health-grid > :nth-child(4) {
+      grid-column: 1 / -1;
+      grid-row: 3;
+    }
+    .health-grid > :nth-child(6) {
+      grid-column: 1 / -1;
+      grid-row: 4;
     }
   }
 
@@ -189,9 +236,91 @@ h1, h2, h3, p, span, a, button, label {
     @apply flex flex-none items-center justify-center rounded-full font-semibold;
     width: 24px;
     height: 24px;
-    font-size: 11px;
+    font-size: 12px;
     background: #e6e4df;
     color: #37352f;
+  }
+
+  /* Timeline rows. The bar is a real button, so on touch the row grows to 44px
+     and the bar with it — a 20px sliver is impossible to hit with a thumb. */
+  .gantt-row {
+    height: 36px;
+  }
+  .gantt-group {
+    height: 32px;
+  }
+  .gantt-bar {
+    top: 8px;
+    height: 20px;
+  }
+  @media (pointer: coarse) {
+    .gantt-row {
+      height: 44px;
+    }
+    .gantt-group {
+      height: 40px;
+    }
+    .gantt-bar {
+      top: 9px;
+      height: 26px;
+    }
+  }
+
+  /* Icon-only control (menu dots, reorder arrows, clear-search): a 44px square
+     on touch, exactly as drawn on desktop. */
+  .tap-icon {
+    @apply inline-flex items-center justify-center rounded transition;
+  }
+  @media (pointer: coarse) {
+    .tap-icon {
+      min-width: 44px;
+      min-height: 44px;
+    }
+  }
+
+  /* Row-shaped link or button (sidebar items, filter chips, menu entries):
+     44px tall on touch only, so desktop spacing never changes. */
+  .tap-row {
+    @apply flex items-center;
+  }
+  @media (pointer: coarse) {
+    .tap-row {
+      min-height: 44px;
+    }
+  }
+
+  /* Inline tab strips and pill switchers (project settings tabs, the projects
+     filter row, the tasks scope/view toggles). These are drawn by hand rather
+     than as `.seg`, so they need their own 44px touch floor. */
+  .tap-tab {
+    @apply inline-flex items-center;
+  }
+  @media (pointer: coarse) {
+    .tap-tab {
+      min-height: 44px;
+    }
+  }
+
+  /* Small inline fields drawn without `.input` (the inspector's status /
+     priority / assignee selects, the tag box): 44px tall on touch only. */
+  @media (pointer: coarse) {
+    .tap-field {
+      min-height: 44px;
+    }
+  }
+
+  /* Action bar for bottom-sheet forms. Stickied to the bottom of the sheet on
+     phones (thumb reach, survives the on-screen keyboard); an ordinary inline
+     button row from sm up. */
+  .sheet-actions {
+    @apply sticky bottom-0 z-10 -mx-4 flex flex-col-reverse gap-2 border-t border-line bg-surface px-4 py-3;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem);
+  }
+  @media (min-width: 640px) {
+    .sheet-actions {
+      @apply static z-auto mx-0 flex-row justify-end border-0 bg-transparent px-0 py-0;
+      padding-bottom: 0;
+    }
   }
 
   /* Snap-scrolling column track (kanban on a phone). Only below sm. */
@@ -199,6 +328,8 @@ h1, h2, h3, p, span, a, button, label {
     .snap-x-columns {
       scroll-snap-type: x mandatory;
       -webkit-overflow-scrolling: touch;
+      /* A swipe past the last column must not hand the gesture to the page. */
+      overscroll-behavior-x: contain;
     }
     .snap-column {
       scroll-snap-align: start;
@@ -224,6 +355,22 @@ h1, h2, h3, p, span, a, button, label {
       /* >=16px stops iOS Safari from zooming the page on focus. */
       font-size: 16px;
     }
+    /* Same rule again with an element selector: several fields add a
+       `text-xs`/`text-sm` utility, and a lone class selector loses to any
+       utility in the layer below. Element + class outranks them, so no field
+       can slip under the 16px zoom threshold. */
+    input.input,
+    select.input,
+    textarea.input {
+      min-height: 44px;
+      font-size: 16px;
+    }
+    /* Segmented controls are view switchers — 30px is a mouse target, not a
+       finger one. */
+    .seg-item {
+      min-height: 44px;
+      @apply px-3;
+    }
     /* Anything that only reveals itself on hover is invisible to a finger. */
     .group:hover .group-hover\:opacity-100 {
       opacity: 1 !important;
@@ -231,6 +378,14 @@ h1, h2, h3, p, span, a, button, label {
     input[type="checkbox"].task-check {
       width: 22px;
       height: 22px;
+    }
+  }
+  /* On a phone the row is 44px tall already, so the checkbox can be scaled up
+     to nearly fill it without costing the title any width. */
+  @media (pointer: coarse) and (max-width: 639px) {
+    input[type="checkbox"].task-check {
+      width: 28px;
+      height: 28px;
     }
   }
   .btn-primary {
@@ -278,6 +433,21 @@ h1, h2, h3, p, span, a, button, label {
    hydration and keeps the class in sync. */
 html.sidebar-collapsed .app-sidebar {
   display: none !important;
+}
+
+/* No text field may render below 16px on a touch device: iOS Safari zooms the
+   whole page the moment one is focused, and a zoomed page can only be un-zoomed
+   with a pinch. Several fields are drawn without `.input` (the inspector's
+   inline status/priority/assignee selects, the tag box, the command-palette
+   search, the comment box), so this rule has to be blanket — and it has to sit
+   outside every layer because the `text-xs`/`text-sm` utilities are emitted
+   later in the stylesheet. */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

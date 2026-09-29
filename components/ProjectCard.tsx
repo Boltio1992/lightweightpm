@@ -47,7 +47,7 @@ export function CardMenu({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-8 w-8 items-center justify-center rounded-md text-muted transition hover:bg-subtle hover:text-ink"
+        className="tap-icon h-8 w-8 rounded-md text-muted hover:bg-subtle hover:text-ink"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Project actions"

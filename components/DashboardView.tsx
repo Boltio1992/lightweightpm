@@ -88,9 +88,9 @@ function AttentionRow({ item }: { item: AttentionItem }) {
       <div className="min-w-0 flex-1">
         <Link
           href={item.projectId ? `/projects/${item.projectId}` : "/tasks"}
-          className="block truncate text-sm font-medium text-ink hover:underline"
+          className="tap-row min-w-0 text-sm font-medium text-ink hover:underline"
         >
-          {item.title}
+          <span className="truncate">{item.title}</span>
         </Link>
         <p className="truncate text-xs text-muted">
           {item.projectName} · {item.assigneeName ?? "Unassigned"}
@@ -182,8 +182,8 @@ export default function DashboardView({ data, todayLabel }: { data: DashboardDat
                 const expected = p.expectedPercent;
                 return (
                   <div key={p.id} className="health-grid border-b border-line px-4 py-2.5 last:border-0">
-                    <Link href={`/projects/${p.id}`} className="truncate text-sm font-medium text-ink hover:underline">
-                      {p.name}
+                    <Link href={`/projects/${p.id}`} className="tap-row min-w-0 text-sm font-medium text-ink hover:underline">
+                      <span className="truncate">{p.name}</span>
                     </Link>
                     <span className="hidden lg:block">
                       <ProjectStatusBadge status={p.status} />

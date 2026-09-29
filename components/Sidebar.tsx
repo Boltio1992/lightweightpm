@@ -106,7 +106,7 @@ export default function Sidebar({
             go();
             onOpenSearch?.();
           }}
-          className="mx-3 mb-2 flex items-center justify-between rounded-lg border border-line bg-white/80 px-2.5 py-1.5 text-xs text-muted hover:border-ink/20 hover:text-ink transition shadow-2xs"
+          className="tap-row mx-3 mb-2 flex items-center justify-between rounded-lg border border-line bg-white/80 px-2.5 py-1.5 text-xs text-muted hover:border-ink/20 hover:text-ink transition shadow-2xs"
         >
           <div className="flex items-center gap-1.5">
             <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -127,7 +127,7 @@ export default function Sidebar({
               key={item.href}
               href={item.href}
               onClick={go}
-              className={`flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition ${
+              className={`tap-row w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition ${
                 active ? "bg-white font-medium text-ink shadow-card" : "text-muted hover:bg-white/70 hover:text-ink"
               }`}
             >
@@ -142,7 +142,7 @@ export default function Sidebar({
         <Link
           href="/profile"
           onClick={go}
-          className="flex items-center gap-2.5 rounded-md px-2 py-2 text-sm hover:bg-white/70"
+          className="tap-row flex items-center gap-2.5 rounded-md px-2 py-2 text-sm hover:bg-white/70"
         >
           <div className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-accent text-xs font-semibold text-white">
             {initials}
@@ -154,7 +154,7 @@ export default function Sidebar({
         </Link>
         <button
           onClick={logout}
-          className="mt-1 w-full rounded-md px-2.5 py-1.5 text-left text-sm text-muted hover:bg-white/70 hover:text-danger"
+          className="tap-row mt-1 w-full rounded-md px-2.5 py-1.5 text-left text-sm text-muted hover:bg-white/70 hover:text-danger"
         >
           Log out
         </button>

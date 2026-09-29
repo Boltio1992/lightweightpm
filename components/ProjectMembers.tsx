@@ -148,7 +148,7 @@ export default function ProjectMembers({
 
                 <button
                   onClick={() => remove(m.id)}
-                  className="tap flex-none rounded px-3 text-xs text-muted opacity-60 transition hover:text-danger hover:opacity-100"
+                  className="tap flex-none rounded px-3 text-xs text-muted transition opacity-100 sm:opacity-60 hover:text-danger hover:opacity-100"
                 >
                   Remove
                 </button>
@@ -174,7 +174,7 @@ export default function ProjectMembers({
                 <button
                   key={u.id}
                   onClick={() => addRegistered(u)}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-subtle"
+                  className="tap-row w-full gap-2 px-3 py-2 text-left hover:bg-subtle"
                 >
                   <div className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-ink text-xs font-semibold text-white">
                     {(u.name || u.username).slice(0, 2).toUpperCase()}

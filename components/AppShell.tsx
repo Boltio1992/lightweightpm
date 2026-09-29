@@ -124,7 +124,7 @@ export default function AppShell({
             type="button"
             onClick={() => setMobileNavOpen(true)}
             aria-label="Open navigation"
-            className="-ml-1 rounded-md p-2 text-ink hover:bg-subtle active:bg-subtle/80 transition"
+            className="tap-icon -ml-1 rounded-md p-2 text-ink hover:bg-subtle active:bg-subtle/80 transition"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="M4 7h16M4 12h16M4 17h16" strokeLinecap="round" />
@@ -137,7 +137,7 @@ export default function AppShell({
             type="button"
             onClick={() => setCommandPaletteOpen(true)}
             aria-label="Search"
-            className="rounded-md p-2 text-muted hover:bg-subtle hover:text-ink transition"
+            className="tap-icon rounded-md p-2 text-muted hover:bg-subtle hover:text-ink transition"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
               <circle cx="11" cy="11" r="7" />
@@ -146,7 +146,9 @@ export default function AppShell({
           </button>
         </header>
 
-        <main className="scroll-area h-full flex-1 overflow-y-auto pb-nav lg:pb-0">
+        {/* pb-nav keeps content clear of the tab bar. From md up the tab bar is
+            gone (the sidebar takes over), so the reserve is dropped. */}
+        <main className="scroll-area h-full flex-1 overflow-y-auto pb-nav md:pb-0">
           {/* Keyed on the route so each page fades in on navigation. */}
           <motion.div
             key={pathname}

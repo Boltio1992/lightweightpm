@@ -8,8 +8,10 @@ import type { Task } from "@/types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-const ROW_H = 36;
-const GROUP_H = 32;
+// Row and bar heights live in globals.css as .gantt-row / .gantt-group /
+// .gantt-bar so the coarse-pointer rule there can grow them to 44px. Only the
+// header is sized here, because the chart's weekend bands and today marker are
+// positioned from it.
 const MONTH_H = 26;
 const TICK_H = 26;
 // +2 for the two 1px borders under the header rows, so the label column and
@@ -300,8 +302,9 @@ export default function GanttTimeline({
 
       <div ref={scrollRef} className="relative overflow-x-auto">
         <div className="flex min-w-max">
-          {/* Fixed label column */}
-          <div className="sticky left-0 z-20 w-60 flex-none border-r border-line bg-white">
+          {/* Fixed label column. Narrow on a phone: at 360px a 240px column
+              would leave nothing but a sliver of chart. */}
+          <div className="sticky left-0 z-20 w-36 flex-none border-r border-line bg-white sm:w-52 lg:w-60">
             <div
               className="flex items-center border-b border-line bg-subtle px-3 text-xs font-medium text-muted"
               style={{ height: HEADER_H }}
@@ -312,8 +315,7 @@ export default function GanttTimeline({
               entry.kind === "group" ? (
                 <div
                   key={`g-${entry.key}`}
-                  className="flex items-center gap-2 border-b border-line bg-subtle px-3 text-xs font-semibold text-ink"
-                  style={{ height: GROUP_H }}
+                  className="gantt-group flex items-center gap-2 border-b border-line bg-subtle px-3 text-xs font-semibold text-ink"
                 >
                   <span className="truncate">{entry.label}</span>
                   <span className="text-muted">{entry.count}</span>
@@ -323,8 +325,8 @@ export default function GanttTimeline({
                   key={entry.task.id}
                   type="button"
                   onClick={() => onEdit(entry.task)}
-                  className="flex w-full items-center gap-2 border-b border-line px-3 text-left text-sm text-ink transition hover:bg-subtle"
-                  style={{ height: ROW_H, paddingLeft: 12 + entry.depth * 14 }}
+                  className="gantt-row flex w-full items-center gap-2 border-b border-line px-3 text-left text-sm text-ink transition hover:bg-subtle"
+                  style={{ paddingLeft: 12 + entry.depth * 14 }}
                   title={entry.task.title}
                 >
                   <StatusDot status={entry.task.status} />
@@ -403,8 +405,7 @@ export default function GanttTimeline({
                 return (
                   <div
                     key={`gr-${entry.key}`}
-                    className="border-b border-line bg-subtle/60"
-                    style={{ height: GROUP_H }}
+                    className="gantt-group border-b border-line bg-subtle/60"
                   />
                 );
               }
@@ -418,16 +419,14 @@ export default function GanttTimeline({
               const progress = task.status === "done" ? 100 : task.percent_complete ?? 0;
 
               return (
-                <div key={task.id} className="relative border-b border-line" style={{ height: ROW_H }}>
+                <div key={task.id} className="gantt-row relative border-b border-line">
                   <button
                     type="button"
                     onClick={() => onEdit(task)}
-                    className="absolute overflow-hidden rounded transition hover:brightness-95"
+                    className="gantt-bar absolute flex items-center overflow-hidden rounded transition hover:brightness-95"
                     style={{
                       left,
                       width,
-                      top: 8,
-                      height: 20,
                       background: `${color}26`,
                       border: `1px solid ${overdue ? "#c0392b" : color}`,
                     }}

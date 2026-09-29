@@ -129,6 +129,31 @@ Every push to `main` redeploys automatically. If you change environment variable
 
 ---
 
+## 5. Keeping the database in sync with the code
+
+The app writes columns that older databases may not have. When PostgREST does not
+know a column it rejects the request; `lib/resilientInsert.ts` then drops that
+field and retries, so the row is saved **without** it — which looks like "my data
+disappeared". Three commands catch that:
+
+| Command | What it does | Needs credentials |
+|---|---|---|
+| `npm run db:audit` | Static: compares every column the code reads/writes against `supabase/schema.sql` + migrations. | no |
+| `npm run db:check` | Live: diffs `supabase/schema-manifest.json` against the real database and prints the `ALTER TABLE` statements to fix it. | yes (`.env.local`) |
+| `npm run db:manifest` | Regenerates `supabase/schema-manifest.json` **and** a catch-up migration from `schema.sql`. Run it after any schema change. | no |
+
+Also available in the browser: **`GET /api/health/schema`** (admins only) returns
+the same live diff as JSON, including ready-to-paste SQL — useful on Vercel where
+you have no terminal.
+
+After adding columns, always finish with `notify pgrst, 'reload schema';` or
+PostgREST keeps serving the stale shape. Every migration in
+`supabase/migrations/` already ends with it. If a database was created before a
+feature landed, run `supabase/migrations/20260929_sync_all_columns.sql` once — it
+is idempotent and adds whatever is missing.
+
+---
+
 ## Notes
 
 - **Sub-tasks** are one level deep by design — the schema supports deeper nesting via `parent_task_id`, but the UI renders two levels to keep it readable.

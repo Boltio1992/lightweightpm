@@ -56,12 +56,14 @@ function Row({
         transition={reduceMotion ? { duration: 0 } : motionTransition.fast}
         className="row-grid task-indent group border-b border-line px-4 py-2.5 hover:bg-subtle"
       >
-        {/* 1 — expander. Always 20px wide, with or without a caret, so the
-            checkbox beside it never moves sideways. */}
+        {/* 1 — expander. w-full rather than w-5: the column is 20px on desktop
+            and 32px on a phone, and the caret should be tappable across all of
+            it. Rows without children keep an empty span so the checkbox beside
+            this one never moves sideways. */}
         {subtasks.length > 0 ? (
           <button
             onClick={() => setOpen((v) => !v)}
-            className="tap flex h-5 w-5 items-center justify-center text-muted hover:text-ink"
+            className="tap flex h-5 w-full items-center justify-center text-muted hover:text-ink"
             aria-label="Toggle sub-tasks"
             aria-expanded={open}
           >
@@ -83,7 +85,7 @@ function Row({
           checked={task.status === "done"}
           onChange={toggleDone}
           disabled={busy}
-          className="task-check m-0 h-4 w-4 cursor-pointer rounded border-line accent-accent"
+          className="task-check mx-auto h-4 w-4 cursor-pointer rounded border-line accent-accent"
           aria-label={`Mark "${task.title}" ${task.status === "done" ? "not done" : "done"}`}
         />
 
