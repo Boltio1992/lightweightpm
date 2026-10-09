@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { calculateDueDate } from "@/lib/api";
 import { requireUser } from "@/lib/requireUser";
+import { isProjectMember } from "@/lib/authorize";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 import { fetchTaskById, fetchTasks } from "@/lib/tasks-query";
 
@@ -53,6 +54,19 @@ export async function POST(req: NextRequest) {
 
   if (duration != null && (!Number.isInteger(duration) || duration < 0)) {
     return NextResponse.json({ error: "Duration must be a non-negative number of days." }, { status: 400 });
+  }
+
+  // Authorization: a task bound to a project may only be created by a member of
+  // that project (workspace). Standalone tasks are owned directly by the user.
+  const projectId = body?.project_id ?? null;
+  if (projectId) {
+    const member = await isProjectMember(auth.id, projectId);
+    if (!member) {
+      return NextResponse.json(
+        { error: "You are not a member of this project." },
+        { status: 403 }
+      );
+    }
   }
 
   // Auto-calculate due_date from start_date and duration_days if not explicitly provided

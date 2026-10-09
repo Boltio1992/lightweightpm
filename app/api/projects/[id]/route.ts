@@ -1,7 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/requireUser";
+import { isProjectAdmin } from "@/lib/authorize";
 import { updateSkippingMissingColumns } from "@/lib/resilientInsert";
 import { supabaseAdmin } from "@/lib/supabaseServer";
+
+/**
+ * Verifies the caller is allowed to mutate the given project: either they
+ * created it, or they hold an admin/owner role in the project's membership.
+ * Returns null when permitted, or a NextResponse describing the failure.
+ */
+async function authorizeProjectMutation(
+  userId: string,
+  projectId: string
+): Promise<NextResponse | null> {
+  const db = supabaseAdmin();
+  const { data: project, error } = await db
+    .from("projects")
+    .select("id, created_by")
+    .eq("id", projectId)
+    .maybeSingle();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  if (!project) {
+    return NextResponse.json({ error: "Project not found." }, { status: 404 });
+  }
+
+  const isCreator = project.created_by === userId;
+  const isAdmin = await isProjectAdmin(userId, projectId);
+  if (!isCreator && !isAdmin) {
+    return NextResponse.json(
+      { error: "You do not have permission to modify this project." },
+      { status: 403 }
+    );
+  }
+
+  return null;
+}
 
 // "*" instead of an explicit list: naming a column the live database (or
 // PostgREST's schema cache) does not know makes the query fail, which surfaced
@@ -29,6 +65,9 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const auth = await requireUser();
   if (auth instanceof NextResponse) return auth;
+
+  const forbidden = await authorizeProjectMutation(auth.id, params.id);
+  if (forbidden) return forbidden;
 
   const body = await req.json().catch(() => null);
   if (!body || typeof body !== "object") {
@@ -102,6 +141,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   const auth = await requireUser();
   if (auth instanceof NextResponse) return auth;
+
+  const forbidden = await authorizeProjectMutation(auth.id, params.id);
+  if (forbidden) return forbidden;
 
   const { error } = await supabaseAdmin().from("projects").delete().eq("id", params.id);
   if (error) {

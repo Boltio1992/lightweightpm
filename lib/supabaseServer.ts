@@ -15,6 +15,7 @@ interface Store {
   tasks: any[];
   task_comments: any[];
   task_activity: any[];
+  notifications: any[];
 }
 
 function getInitialStore(): Store {
@@ -33,6 +34,10 @@ function getInitialStore(): Store {
   const t6Id = "c0000000-0000-4000-8000-000000000006";
   const t2Sub1Id = "c0000000-0000-4000-8000-000000000007";
   const t2Sub2Id = "c0000000-0000-4000-8000-000000000008";
+  const t7Id = "c0000000-0000-4000-8000-000000000009";
+  const t8Id = "c0000000-0000-4000-8000-000000000010";
+  const t9Id = "c0000000-0000-4000-8000-000000000011";
+  const t10Id = "c0000000-0000-4000-8000-000000000012";
 
   const passwordHash = bcrypt.hashSync("password123", 10);
   const now = new Date().toISOString();
@@ -307,6 +312,82 @@ function getInitialStore(): Store {
         created_at: now,
         updated_at: now,
       },
+      {
+        id: t7Id,
+        project_id: p2Id,
+        parent_task_id: null,
+        title: "Implement offline data sync engine",
+        description: "Queue mutations locally and reconcile with the server on reconnect.",
+        status: "in_progress",
+        priority: "urgent",
+        assignee_id: marcusId,
+        start_date: "2026-09-16",
+        due_date: "2026-10-10",
+        duration_days: 24,
+        percent_complete: 45,
+        sort_order: 0,
+        tags: ["offline", "sync", "core"],
+        created_by: adminId,
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: t8Id,
+        project_id: p2Id,
+        parent_task_id: null,
+        title: "Responsive layout system for phones and tablets",
+        description: "Fluid grids and breakpoints covering small and large form factors.",
+        status: "todo",
+        priority: "high",
+        assignee_id: janeId,
+        start_date: "2026-09-20",
+        due_date: "2026-10-15",
+        duration_days: 25,
+        percent_complete: 0,
+        sort_order: 1,
+        tags: ["ui", "responsive"],
+        created_by: adminId,
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: t9Id,
+        project_id: p2Id,
+        parent_task_id: t7Id,
+        title: "Conflict resolution strategy for concurrent edits",
+        description: "Define last-write-wins vs. merge rules for offline edits.",
+        status: "todo",
+        priority: "medium",
+        assignee_id: marcusId,
+        start_date: "2026-09-24",
+        due_date: "2026-10-08",
+        duration_days: 14,
+        percent_complete: 0,
+        sort_order: 0,
+        tags: ["offline", "sync"],
+        created_by: adminId,
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: t10Id,
+        project_id: p2Id,
+        parent_task_id: null,
+        title: "Push notification delivery pipeline",
+        description: "Wire FCM/APNs delivery with quiet-hours and preference controls.",
+        status: "review",
+        priority: "medium",
+        assignee_id: janeId,
+        start_date: "2026-09-22",
+        due_date: "2026-10-12",
+        duration_days: 20,
+        percent_complete: 80,
+        sort_order: 2,
+        tags: ["notifications", "infra"],
+        created_by: adminId,
+        created_at: now,
+        updated_at: now,
+      },
     ],
     task_comments: [
       {
@@ -358,6 +439,7 @@ function getInitialStore(): Store {
         created_at: now,
       },
     ],
+    notifications: [],
   };
 }
 
@@ -653,6 +735,27 @@ function createMockClient(): AdminClient {
 
       return builder;
     },
+
+    /**
+     * Notification helpers. These are not part of the standard Supabase client
+     * surface; they exist so callers (and any future UI) can rely on a uniform
+     * interface even when running against the in-memory mock. The mock keeps a
+     * `notifications` array on the shared store.
+     */
+    async getNotifications(userId: string) {
+      const store = globalStore;
+      if (!store.notifications) store.notifications = [];
+      const rows = store.notifications.filter((n: any) => n.user_id === userId);
+      return { data: rows, error: null };
+    },
+
+    async markNotificationRead(notificationId: string) {
+      const store = globalStore;
+      if (!store.notifications) store.notifications = [];
+      const note = store.notifications.find((n: any) => n.id === notificationId);
+      if (note) note.read = true;
+      return { data: note ?? null, error: null };
+    },
   } as unknown as AdminClient;
 }
 
@@ -705,6 +808,7 @@ export function clearMockStore(options: { preserveUsers?: boolean; reseed?: bool
     store.tasks = fresh.tasks;
     store.task_comments = fresh.task_comments;
     store.task_activity = fresh.task_activity;
+    store.notifications = fresh.notifications;
   } else {
     store.tasks = [];
     store.task_comments = [];
