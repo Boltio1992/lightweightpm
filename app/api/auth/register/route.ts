@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const username = (body?.username || "").trim().toLowerCase();
   const password = body?.password || "";
-  const confirmPassword = body?.confirmPassword || "";
+  const confirmPassword = body?.confirmPassword;
 
   if (!username || username.length < 3) {
     return NextResponse.json(
@@ -26,6 +26,9 @@ export async function POST(req: NextRequest) {
       { error: "Password must be at least 6 characters." },
       { status: 400 }
     );
+  }
+  if (confirmPassword === undefined || confirmPassword === null) {
+    return NextResponse.json({ error: "confirmPassword is required." }, { status: 400 });
   }
   if (password !== confirmPassword) {
     return NextResponse.json({ error: "Passwords do not match." }, { status: 400 });

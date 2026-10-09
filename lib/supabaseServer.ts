@@ -634,7 +634,28 @@ function createMockClient(): AdminClient {
 
         _format(rows: any[]) {
           return rows.map((row) => {
-            const formatted = { ...row };
+            // Apply the column projection requested via .select(). PostgREST only
+            // returns the requested columns; the in-memory mock previously
+            // returned full rows (including password_hash) regardless of the
+            // projection, which leaked secrets in responses.
+            let base: any = row;
+            if (selectedCols && selectedCols.trim() !== "*") {
+              const cols = selectedCols.split(",").map((c) => c.trim()).filter(Boolean);
+              const projected: any = {};
+              for (const c of cols) projected[c] = row[c];
+              base = projected;
+            }
+
+            // Never leak password_hash unless the caller explicitly selected it
+            // (e.g. login verification).
+            const explicitlyWantsHash =
+              !!selectedCols &&
+              selectedCols.split(",").map((c) => c.trim()).includes("password_hash");
+            if (!explicitlyWantsHash) {
+              delete base.password_hash;
+            }
+
+            const formatted = { ...base };
             if (tableName === "tasks") {
               const project = (store.projects || []).find((p: any) => p.id === row.project_id);
               const assignee = (store.users || []).find((u: any) => u.id === row.assignee_id);
