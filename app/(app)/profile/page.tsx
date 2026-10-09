@@ -15,7 +15,7 @@ function ProfilePageInner() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    fetch("/api/auth/me")
+    fetch("/api/profile")
       .then((r) => r.json())
       .then((data) => {
         if (data.user) {

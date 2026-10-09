@@ -419,7 +419,7 @@ export default function GanttTimeline({
               <div className="gantt-month-band relative border-b border-line">
                 {months.map((m, i) => (
                   <span
-                    key={i}
+                    key={`m-${m.left}`}
                     className={`absolute top-0 flex h-full items-center overflow-hidden border-l border-line px-2 text-xs font-semibold text-ink ${
                       m.partial ? "opacity-70" : ""
                     }`}
@@ -436,7 +436,7 @@ export default function GanttTimeline({
                     const weekend = d.getDay() === 0 || d.getDay() === 6;
                     return (
                       <span
-                        key={i}
+                        key={`t-day-${t.left}`}
                         className="absolute top-0 flex flex-col items-center justify-center text-xs leading-tight"
                         style={{ left: t.left, width: t.width }}
                       >
@@ -450,7 +450,7 @@ export default function GanttTimeline({
                 {zoom !== "day" &&
                   ticks.map((t, i) => (
                     <span
-                      key={i}
+                      key={`t-${t.left}`}
                       className={`absolute top-0 flex h-full items-center justify-center overflow-hidden border-l border-line text-xs ${
                         t.strong ? "font-semibold text-ink" : "text-muted"
                       }`}
@@ -466,7 +466,7 @@ export default function GanttTimeline({
                 label can never sit between two lines. */}
             {gridlines.map((g, i) => (
               <span
-                key={i}
+                key={`g-${g.left}`}
                 aria-hidden="true"
                 className={`pointer-events-none absolute bottom-0 top-0 ${
                   g.strong ? "border-l border-line" : "border-l border-line"
@@ -478,7 +478,7 @@ export default function GanttTimeline({
             {/* Weekend shading */}
             {weekends.map((w, i) => (
               <span
-                key={i}
+                key={`w-${w.left}`}
                 aria-hidden="true"
                 className="pointer-events-none absolute bottom-0 bg-subtle"
                 style={{ left: w.left, width: w.width, top: HEADER_H }}

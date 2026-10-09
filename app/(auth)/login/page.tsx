@@ -23,7 +23,13 @@ function LoginPageInner() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Login failed.");
-      const nextUrl = search.get("next") || "/dashboard";
+      // Only allow internal, root-relative redirects. A `next` value like
+      // "//evil.com" or "https://evil.com" would otherwise open-redirect.
+      const nextParam = search.get("next");
+      const nextUrl =
+        nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
+          ? nextParam
+          : "/dashboard";
       window.location.href = nextUrl;
     } catch (err: any) {
       setError(err.message);

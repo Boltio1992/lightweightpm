@@ -65,6 +65,8 @@ export default function ProjectSettingsModal({
   const [newStatusIsDone, setNewStatusIsDone] = useState(false);
   const [addingStatus, setAddingStatus] = useState(false);
   const [workflowError, setWorkflowError] = useState<string | null>(null);
+  const [memberError, setMemberError] = useState<string | null>(null);
+  const [dangerError, setDangerError] = useState<string | null>(null);
 
   // Members tab state
   const [memberList, setMemberList] = useState<ProjectMember[]>(members);
@@ -242,7 +244,7 @@ export default function ProjectSettingsModal({
   async function deleteStatus(statusId: string) {
     if (!project) return;
     if (statuses.length <= 1) {
-      alert("A project must have at least one workflow status.");
+      setWorkflowError("A project must have at least one workflow status.");
       return;
     }
     if (!confirm("Delete this status? Tasks in this status will be moved to the first available status.")) return;
@@ -258,6 +260,7 @@ export default function ProjectSettingsModal({
 
   async function updateMemberRole(memberId: string, role: string) {
     if (!project) return;
+    setMemberError(null);
     setUpdatingMemberId(memberId);
     try {
       await api(`/api/projects/${project.id}/members/${memberId}`, {
@@ -267,7 +270,7 @@ export default function ProjectSettingsModal({
       await loadMembers();
       await onSaved();
     } catch (err: any) {
-      alert(err.message || "Failed to update role");
+      setMemberError(err.message || "Failed to update role");
     } finally {
       setUpdatingMemberId(null);
     }
@@ -276,17 +279,19 @@ export default function ProjectSettingsModal({
   async function removeMember(memberId: string) {
     if (!project) return;
     if (!confirm("Remove this member from the project?")) return;
+    setMemberError(null);
     try {
       await api(`/api/projects/${project.id}/members/${memberId}`, { method: "DELETE" });
       await loadMembers();
       await onSaved();
     } catch (err: any) {
-      alert(err.message || "Failed to remove member");
+      setMemberError(err.message || "Failed to remove member");
     }
   }
 
   async function addRegisteredMember(u: UserPublic) {
     if (!project) return;
+    setMemberError(null);
     try {
       await api(`/api/projects/${project.id}/members`, {
         method: "POST",
@@ -297,13 +302,14 @@ export default function ProjectSettingsModal({
       await loadMembers();
       await onSaved();
     } catch (err: any) {
-      alert(err.message || "Failed to add member");
+      setMemberError(err.message || "Failed to add member");
     }
   }
 
   async function addDataMember(e: React.FormEvent) {
     e.preventDefault();
     if (!project || !mName.trim()) return;
+    setMemberError(null);
     setAddingDataMember(true);
     try {
       await api(`/api/projects/${project.id}/members/manual`, {
@@ -316,7 +322,7 @@ export default function ProjectSettingsModal({
       await loadMembers();
       await onSaved();
     } catch (err: any) {
-      alert(err.message || "Failed to add data member");
+      setMemberError(err.message || "Failed to add data member");
     } finally {
       setAddingDataMember(false);
     }
@@ -324,6 +330,7 @@ export default function ProjectSettingsModal({
 
   async function toggleArchive() {
     if (!project) return;
+    setDangerError(null);
     setIsArchiving(true);
     const newStatus = project.status === "archived" ? "active" : "archived";
     try {
@@ -337,7 +344,7 @@ export default function ProjectSettingsModal({
       await onSaved();
       onClose();
     } catch (err: any) {
-      alert(err.message || "Failed to change project archive state");
+      setDangerError(err.message || "Failed to change project archive state");
     } finally {
       setIsArchiving(false);
     }
@@ -345,9 +352,10 @@ export default function ProjectSettingsModal({
 
   async function handleDeleteProject() {
     if (!project) return;
+    setDangerError(null);
     const confirmed = prompt(`Type "${project.name}" to permanently delete this project:`);
     if (confirmed !== project.name) {
-      if (confirmed !== null) alert("Project name did not match. Deletion cancelled.");
+      if (confirmed !== null) setDangerError("Project name did not match. Deletion cancelled.");
       return;
     }
 
@@ -357,7 +365,7 @@ export default function ProjectSettingsModal({
       onClose();
       onDeleted?.();
     } catch (err: any) {
-      alert(err.message || "Failed to delete project");
+      setDangerError(err.message || "Failed to delete project");
       setIsDeleting(false);
     }
   }
@@ -666,6 +674,24 @@ export default function ProjectSettingsModal({
             </p>
           </div>
 
+          {memberError && (
+            <div
+              role="alert"
+              className="flex items-center gap-2 rounded-lg border border-danger bg-dangerSoft px-3 py-2.5 text-sm text-danger"
+            >
+              <span aria-hidden="true">⚠️</span>
+              <p className="flex-1">{memberError}</p>
+              <button
+                type="button"
+                onClick={() => setMemberError(null)}
+                className="tap px-1 text-danger hover:text-danger"
+                aria-label="Dismiss error"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           <div className="divide-y divide-line rounded-lg border border-line bg-surface">
             {memberList.map((m) => {
               const workload = m.workload ?? { total: 0, in_progress: 0, done: 0 };
@@ -807,6 +833,24 @@ export default function ProjectSettingsModal({
               Destructive actions for this project. Please proceed with caution.
             </p>
           </div>
+
+          {dangerError && (
+            <div
+              role="alert"
+              className="flex items-center gap-2 rounded-lg border border-danger bg-dangerSoft px-3 py-2.5 text-sm text-danger"
+            >
+              <span aria-hidden="true">⚠️</span>
+              <p className="flex-1">{dangerError}</p>
+              <button
+                type="button"
+                onClick={() => setDangerError(null)}
+                className="tap px-1 text-danger hover:text-danger"
+                aria-label="Dismiss error"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           {/* Archive / Restore */}
           <div className="flex items-center justify-between p-4 rounded-lg border border-line bg-subtle">

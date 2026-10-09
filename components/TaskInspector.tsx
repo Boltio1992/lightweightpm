@@ -58,6 +58,7 @@ export default function TaskInspector({
 
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const loadSubtasks = useCallback(async (taskId: string) => {
     try {
@@ -115,6 +116,7 @@ export default function TaskInspector({
 
   async function saveField(fieldName: string, value: any) {
     if (!task) return;
+    setError(null);
     setSaving(true);
     try {
       await api(`/api/tasks/${task.id}`, {
@@ -126,7 +128,7 @@ export default function TaskInspector({
       onTaskUpdated();
       loadActivity(task.id);
     } catch (err: any) {
-      alert(err.message || "Failed to update task");
+      setError(err.message || "Failed to update task");
     } finally {
       setSaving(false);
     }
@@ -134,6 +136,7 @@ export default function TaskInspector({
 
   async function saveAll() {
     if (!task) return;
+    setError(null);
     setSaving(true);
     try {
       await api(`/api/tasks/${task.id}`, {
@@ -156,7 +159,7 @@ export default function TaskInspector({
       onTaskUpdated();
       loadActivity(task.id);
     } catch (err: any) {
-      alert(err.message || "Failed to save changes");
+      setError(err.message || "Failed to save changes");
     } finally {
       setSaving(false);
     }
@@ -165,6 +168,7 @@ export default function TaskInspector({
   async function handleAddSubtask(e: React.FormEvent) {
     e.preventDefault();
     if (!task || !newSubtaskTitle.trim()) return;
+    setError(null);
     setAddingSubtask(true);
     try {
       await api("/api/tasks", {
@@ -182,7 +186,7 @@ export default function TaskInspector({
       onTaskUpdated();
       loadActivity(task.id);
     } catch (err: any) {
-      alert(err.message || "Failed to add subtask");
+      setError(err.message || "Failed to add subtask");
     } finally {
       setAddingSubtask(false);
     }
@@ -206,6 +210,7 @@ export default function TaskInspector({
   async function handleAddComment(e: React.FormEvent) {
     e.preventDefault();
     if (!task || !newComment.trim()) return;
+    setError(null);
     setSubmittingComment(true);
     try {
       await api(`/api/tasks/${task.id}/comments`, {
@@ -216,7 +221,7 @@ export default function TaskInspector({
       await loadComments(task.id);
       await loadActivity(task.id);
     } catch (err: any) {
-      alert(err.message || "Failed to post comment");
+      setError(err.message || "Failed to post comment");
     } finally {
       setSubmittingComment(false);
     }
@@ -243,12 +248,13 @@ export default function TaskInspector({
   async function deleteTask() {
     if (!task) return;
     if (!confirm(`Delete "${task.title}" and its subtasks?`)) return;
+    setError(null);
     try {
       await api(`/api/tasks/${task.id}`, { method: "DELETE" });
       onTaskDeleted(task.id);
       onClose();
     } catch (err: any) {
-      alert(err.message || "Failed to delete task");
+      setError(err.message || "Failed to delete task");
     }
   }
 
@@ -311,6 +317,26 @@ export default function TaskInspector({
               </button>
             </div>
           </div>
+
+          {/* Inline error banner (replaces alert()) — auto-dismisses on the
+              next action because every mutating handler clears it first. */}
+          {error && (
+            <div
+              role="alert"
+              className="flex items-center gap-2 border-b border-danger bg-dangerSoft px-4 py-2 text-sm text-danger sm:px-6"
+            >
+              <span aria-hidden="true">⚠️</span>
+              <p className="flex-1">{error}</p>
+              <button
+                type="button"
+                onClick={() => setError(null)}
+                className="tap px-1 text-danger hover:text-danger"
+                aria-label="Dismiss error"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           {/* Quick Header Controls */}
           <div className="flex flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-3 sm:px-6">
