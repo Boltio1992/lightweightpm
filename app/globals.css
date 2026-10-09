@@ -266,13 +266,14 @@ h1, h2, h3, p, span, a, button, label {
       grid-template-columns: minmax(0, 1fr) 120px 110px 180px 90px 110px;
     }
   }
-  /* Five fixed columns (~474px) do not fit a 360px phone, so below sm every
-     row becomes a stacked card:
+  /* Five fixed columns (~474px) do not fit below md (the sidebar opens at 768px
+     and tablets portrait still have too little room), so below md every row
+     becomes a stacked card:
        row 1 name · row 2 health + tasks · row 3 progress · row 4 deadline
      Child order is fixed by DashboardView: name, status, health, progress,
      tasks, deadline. The status cell is display:none until lg — that removes
      it from the grid but not from the nth-child count, hence the gaps. */
-  @media (max-width: 639px) {
+  @media (max-width: 767px) {
     .health-grid {
       grid-template-columns: minmax(0, 1fr) auto;
       row-gap: 6px;

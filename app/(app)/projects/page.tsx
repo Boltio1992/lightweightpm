@@ -496,7 +496,7 @@ export default function ProjectsPage() {
             <label className="label">Default view</label>
             <select className="input" value={defaultView} onChange={(e) => setDefaultView(e.target.value)}>
               <option value="kanban">Kanban Board</option>
-              <option value="list">Tasks List</option>
+              <option value="list">Task List</option>
               <option value="timeline">Timeline</option>
               <option value="members">Members</option>
             </select>

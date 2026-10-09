@@ -187,7 +187,7 @@ export default function DashboardView({ data, todayLabel }: { data: DashboardDat
                 return (
                   <div key={p.id} className="health-grid border-b border-line px-4 py-2.5 last:border-0">
                     <Link href={`/projects/${p.id}`} className="tap-row min-w-0 text-sm font-medium text-ink hover:underline">
-                      <span className="truncate">{p.name}</span>
+                      <span className="line-clamp-2 break-words">{p.name}</span>
                     </Link>
                     <span className="hidden lg:block">
                       <ProjectStatusBadge status={p.status} />
