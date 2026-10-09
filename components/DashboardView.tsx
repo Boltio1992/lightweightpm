@@ -54,13 +54,13 @@ function Metric({
 
 function SectionHeader({ title, hint, href, linkLabel }: { title: string; hint?: string; href?: string; linkLabel?: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5">
-      <div className="flex min-w-0 items-baseline gap-2">
+    <div className="flex items-start justify-between gap-3 border-b border-line px-4 py-2.5">
+      <div className="min-w-0 flex-1">
         <h2 className="text-sm font-semibold text-ink">{title}</h2>
-        {hint && <p className="truncate text-xs text-muted">{hint}</p>}
+        {hint && <p className="mt-0.5 text-xs leading-snug text-muted sm:mt-0 sm:inline sm:before:content-['_·_']">{hint}</p>}
       </div>
       {href && (
-        <Link href={href} className="flex-none text-xs font-medium text-accent hover:underline">
+        <Link href={href} className="mt-0.5 flex-none text-xs font-medium text-accent hover:underline">
           {linkLabel ?? "View all"}
         </Link>
       )}
@@ -80,9 +80,12 @@ function AttentionRow({ item }: { item: AttentionItem }) {
       : { text: item.ageDays !== null ? `open ${item.ageDays}d` : "no owner", tone: "text-muted" };
 
   return (
-    <li className="flex items-center gap-3 border-b border-line px-4 py-2.5 last:border-0">
-      <span className={`chip ${reason.chip} w-[86px] flex-none justify-center`}>{reason.label}</span>
-      <span className="w-3 flex-none text-center text-xs text-muted" aria-hidden="true">
+    <li className="flex flex-col gap-1.5 border-b border-line px-4 py-2.5 last:border-0 sm:flex-row sm:items-center sm:gap-3">
+      <div className="flex items-center gap-2 sm:contents">
+        <span className={`chip ${reason.chip} flex-none justify-center`}>{reason.label}</span>
+        <span className={`ml-auto text-xs sm:order-last sm:ml-0 sm:flex-none ${meta.tone}`}>{meta.text}</span>
+      </div>
+      <span className="hidden w-3 flex-none text-center text-xs text-muted sm:inline" aria-hidden="true">
         {PRIORITY_MARK[item.priority] ?? "·"}
       </span>
       <div className="min-w-0 flex-1">
@@ -90,13 +93,14 @@ function AttentionRow({ item }: { item: AttentionItem }) {
           href={item.projectId ? `/projects/${item.projectId}` : "/tasks"}
           className="tap-row min-w-0 text-sm font-medium text-ink hover:underline"
         >
-          <span className="truncate">{item.title}</span>
+          <span className="line-clamp-2 break-words">{item.title}</span>
         </Link>
-        <p className="truncate text-xs text-muted">
-          {item.projectName} · {item.assigneeName ?? "Unassigned"}
+        <p className="mt-0.5 text-xs leading-snug text-muted">
+          <span className="break-words">{item.projectName}</span>
+          <span className="text-muted"> · </span>
+          <span className="break-words">{item.assigneeName ?? "Unassigned"}</span>
         </p>
       </div>
-      <span className={`flex-none text-xs ${meta.tone}`}>{meta.text}</span>
     </li>
   );
 }
@@ -169,7 +173,7 @@ export default function DashboardView({ data, todayLabel }: { data: DashboardDat
             <p className="px-4 py-6 text-sm text-muted">No projects yet — create one to see it here.</p>
           ) : (
             <>
-              <div className="health-grid border-b border-line bg-subtle px-4 py-2 text-xs font-medium text-muted">
+              <div className="health-grid hidden border-b border-line bg-subtle px-4 py-2 text-xs font-medium text-muted sm:grid">
                 <span>Project</span>
                 <span className="hidden lg:block">Status</span>
                 <span>Health</span>
