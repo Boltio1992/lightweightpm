@@ -36,10 +36,17 @@ export async function PATCH(req: NextRequest) {
 
   // Only include fields that were actually sent. Defaulting absent fields to ""
   // (the previous behaviour) silently wiped columns such as `role`.
+  // `role` is intentionally NOT updatable here — self-service privilege
+  // escalation (member → admin) must go through an admin-only path.
   const patch: Record<string, unknown> = {};
   if ("name" in body) patch.name = String(body.name ?? "").slice(0, 100);
   if ("title" in body) patch.title = String(body.title ?? "").slice(0, 100);
-  if ("role" in body) patch.role = String(body.role ?? "").slice(0, 50);
+  if ("role" in body) {
+    return NextResponse.json(
+      { error: "Role cannot be changed via profile update." },
+      { status: 403 }
+    );
+  }
 
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: "Nothing to update." }, { status: 400 });
