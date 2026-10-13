@@ -1,8 +1,10 @@
 # HANDOVER — LightPM workflow integration
 
 Written to be read cold: it assumes no knowledge of the previous session.
-**Pause point: phases 1–6 are implemented and verified (100 checks green). One known
-defect is open and listed in §7. Nothing is committed yet (§8).**
+**Pause point: phases 1–6 are implemented and verified (104 checks green). The
+§7 defect is FIXED, and classification is now editable after creation (§6).
+Everything is committed and pushed to `origin/local-hardening` (§8). Two
+decisions are still open and waiting on the human (§9).**
 
 ---
 
@@ -98,9 +100,17 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$proj\scripts\local\smo
 & $node "$proj\scripts\audit-schema.js"                     # expect "No drift"
 ```
 
-**Last run: all 100 checks pass, audit clean, `next build` exit 0.** Run them against a
+**Last run: all 104 checks pass (dashboard 19, config 29, status sets 9,
+links/members 21, unified list 8, SSE 5, smoke 20 — the two suites that prove the
+§7 fix carry new checks), audit clean, `next build` exit 0.** Run them against a
 *reset* store too (`scripts\reset-local-store.js --yes`) — several bugs only appeared on a
 fresh database.
+
+**Never run `next build` while `next dev` is running.** They share `.next`; the build
+wipes the dev server's chunks and every request after that answers 500 with
+`MODULE_NOT_FOUND ./9276.js` / `./chunks/vendor-chunks/next.js` (cost one debugging
+cycle). Stop the dev server first, then build. Recovery if it happens anyway: stop dev,
+`rm -rf .next`, restart.
 
 Type/build check:
 ```powershell
@@ -112,55 +122,79 @@ $env:PATH = "C:\Users\DELL\AppData\Local\Microsoft\WinGet\Packages\OpenJS.NodeJS
 
 ## 6. Next tasks, in order
 
-1. **Fix the open defect in §7** (small, and it makes a dashboard number truthful).
-2. **Let the classification be edited after creation.** It can be set in the create form
-   (`app/(app)/projects/page.tsx` + `POST /api/projects`) but `ProjectSettingsModal.tsx` and
-   `PATCH /api/projects/[id]` do not expose `reference_no` / `type` / `plan_class` /
-   `request_type`, so a typo cannot be corrected.
-3. **Decide the Delivery vocabulary question** (§7 of `05-light-plan.md`, and §9 of
-   `06-ux-design.md`). The three vocabularies already exist as data in `lib/statusSets.ts`
-   and are shown read-only on `/admin`. Switching *new* projects to `DELIVERY_STATUS_SET`
-   also requires updating two things that reference canonical keys: the dashboard's
-   **Blocked** tile counts `status === "blocked"` (the delivery set has no `blocked`), and
-   `todo` is the default in the task-create and import paths (the delivery set calls that
-   state `not_started`). Do them together or tasks will land in no Kanban column.
-4. **Import** — the user has said the real system will **query the source systems directly**
-   rather than import, and the demo is entered by hand. So reference-based import upsert
-   (`05-light-plan.md` §5 phase 4) is probably **out of scope**; confirm before building it.
-5. **Commit.** See §8.
+1. ~~Fix the open defect in §7~~ — **DONE** (see §7 for what it actually was).
+2. ~~Let the classification be edited after creation~~ — **DONE.** `PATCH
+   /api/projects/[id]` accepts `reference_no` / `type` / `plan_class` /
+   `request_type` (blank means "not set"), Project Settings > General renders
+   all four (request type only for New Request, matching the create form), and
+   the server enforces the invariant the form implies: `request_type` only
+   survives while `plan_class` is `new_request`.
+3. **Decide the Delivery vocabulary question** (§9.1, and §7 of
+   `05-light-plan.md` / §9 of `06-ux-design.md`). The three vocabularies
+   already exist as data in `lib/statusSets.ts` and are shown read-only on
+   `/admin`. Switching *new* projects to `DELIVERY_STATUS_SET` also requires
+   updating two things that reference canonical keys: the dashboard's
+   **Blocked** tile counts `status === "blocked"` (the delivery set has no
+   `blocked`), and `todo` is the default in the task-create and import paths
+   (the delivery set calls that state `not_started`). Do them together or tasks
+   will land in no Kanban column.
+4. **Import** — the user has said the real system will **query the source
+   systems directly** rather than import, and the demo is entered by hand. So
+   reference-based import upsert (`05-light-plan.md` §5 phase 4) is probably
+   **out of scope**; confirm before building it.
+5. **Commit** — the working tree was empty at handover; keep it that way. The
+   branch tracks `origin/local-hardening`, so `git push` is a plain push.
 
 ---
 
-## 7. Known open defect (do this first)
+## 7. Query-builder defect — FIXED (was the open item)
 
-`lib/dashboard.ts` calls two query methods that **the local store does not implement**:
+`lib/dashboard.ts` called two query methods that **the local store did not
+implement**:
 
 ```
 lib/dashboard.ts:  .gte("created_at", windowStart.toISOString())
 lib/dashboard.ts:  .like("details", "%to done")
 ```
 
-The store's builder (`createMockClient` in `lib/supabaseServer.ts`) implements
+The store's builder (`createMockClient` in `lib/supabaseServer.ts`) implemented
 `select, insert, update, delete, eq, is, not, in, or, order, limit, single, maybeSingle,
-then` — but **not `gte`, `like` or `neq`**. So the call throws, the surrounding `try/catch`
-swallows it, and the 14-day completion trend **silently falls back to an estimate**
+then` — but **not `gte`, `like` or `neq`**. So the call threw, the surrounding `try/catch`
+swallowed it, and the 14-day completion trend **silently fell back to an estimate**
 (`lib/dashboard.ts` says so in its own comment). Against the old Supabase backend these
-worked, so this is a fidelity regression specific to local-first mode.
+worked, so this was a fidelity regression specific to local-first mode.
 
-`app/api/dev/clear/route.ts` also calls `.neq(...)`; it fails the same way but harmlessly
+`app/api/dev/clear/route.ts` also called `.neq(...)`; it failed the same way but harmlessly
 (the real clearing happens via `clearMockStore`) while logging a misleading error.
 
-**Fix:** implement `gte`, `lte`, `gt`, `lt`, `like` and `neq` in the builder — six small
-methods next to the existing `eq`/`is`/`in` filters. Then prove it: the dashboard trend
-should no longer report `trendSource: "updated"` when activity rows exist.
+**Fixed:** `gte`, `lte`, `gt`, `lt`, `like` and `neq` now live in the builder next to the
+existing `eq`/`is`/`in` filters. Timestamps are compared as instants (format variance
+must not drop rows); `like` translates the SQL `%`/`_` pattern into an anchored RegExp,
+case-sensitive like PostgREST's `like`.
+
+**The second half of the defect — why the trend could never have worked anyway.** Three
+`task_activity` inserts (task create in `app/api/tasks/route.ts`, status/assignee/priority
+changes in `app/api/tasks/[id]/route.ts`, Excel import in `app/api/import/route.ts`) were
+written as `void db.from("task_activity").insert(...)`. A PostgREST builder is lazy and
+only executes when adopted, so those rows were **silently dropped on both the local store
+and Supabase** — the activity log held nothing but seed data. They now wrap the builder in
+`Promise.resolve(...).catch(...)`: still fire-and-forget, but the insert actually runs.
+
+**Proof:** the dashboard trend no longer reports `trendSource: "updated"` when activity
+rows exist — `verify-dashboard-rollups.js` marks a task done and asserts
+`trendSource === "activity"` (it fails with `trendSource=updated` without the fix).
 
 ---
 
 ## 8. Invariants and gotchas
 
-- **Nothing is committed.** `git status` in the project shows ~15 modified and ~15 new paths
-  since the last commit. The branch is `local-hardening`, which is itself **6 commits ahead
-  of `origin/main` and unpushed**. Commit before doing anything risky.
+- **Committed and pushed.** As of this handover the tree is clean and
+  `local-hardening` tracks `origin/local-hardening` (the branch is 9 commits
+  ahead of `origin/main`). The snapshot of the six verified phases is commit
+  `51273c5`; keep committing before anything risky.
+- **A PostgREST builder is lazy — `void db.from(...).insert(...)` never runs.**
+  Adoption is what executes it (`await`, `.then`, or `Promise.resolve(builder)`).
+  This bit the activity log three times; audit any new fire-and-forget write.
 - **The store mirrors the whole database on every write** (`saveStore` in `lib/localDb.ts`):
   every table is rewritten inside one transaction. Trivial at this size; not a query engine.
 - **The SQLite mirror is deliberately permissive** — no `NOT NULL`, `UNIQUE` or foreign keys.
