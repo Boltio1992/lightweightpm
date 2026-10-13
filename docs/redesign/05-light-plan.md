@@ -121,8 +121,14 @@ registers do not report that today either, so nothing is lost now.
 | 1 | The six columns + the reference link (one migration, SQLite + Postgres). | S |
 | 2 | Task statuses read the project's status set; seed the two sets. | S |
 | 3 | One task table: default scope, project filter, project column, wording. | S |
-| 4 | Import: reference-based upsert + preview; map the registers. | M |
+| 4 | Import: reference-based upsert + preview; map the registers. | ~~M~~ |
 | 5 | Optional later: previous/current progress history; approvals. | — |
+
+Phase 4 was **cut by the user's decision (2026-10-13)**: the real system will
+query the source systems directly rather than import, and the demo is entered
+by hand, so the reference-based upsert would be built and never used. The
+existing basic Excel import stays as-is; only the upsert-by-reference work is
+out of scope.
 
 ## 9 · Open questions
 
@@ -135,3 +141,13 @@ registers do not report that today either, so nothing is lost now.
    `Adhoc meeting`).
 4. **Is the workbook the import source, and how often re-imported?** Decides how
    much idempotency the importer needs.
+
+## 10 · Resolved questions (2026-10-13)
+
+1. **New projects keep the DEFAULT vocabulary** (To Do · In Progress · Review ·
+   Blocked · Done), not Delivery. The Delivery set stays as data in
+   `lib/statusSets.ts`, read-only on `/admin`, for projects that want to switch
+   per-project in Project Settings. Nothing to change in the dashboard's Blocked
+   tile or the task-create defaults as a result.
+2. **Workbook import (phase 4 upsert) is out of scope** — the real system will
+   query the source systems directly. The demo stays hand-entered.

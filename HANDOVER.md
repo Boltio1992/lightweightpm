@@ -3,8 +3,9 @@
 Written to be read cold: it assumes no knowledge of the previous session.
 **Pause point: phases 1–6 are implemented and verified (104 checks green). The
 §7 defect is FIXED, and classification is now editable after creation (§6).
-Everything is committed and pushed to `origin/local-hardening` (§8). Two
-decisions are still open and waiting on the human (§9).**
+Everything is committed and pushed to `origin/local-hardening` (§8). The two
+decisions named in the last handover (Delivery vocabulary, workbook import)
+are resolved — see §6.3–6.4 and §9; one older question (§9.2) is still open.**
 
 ---
 
@@ -129,19 +130,15 @@ $env:PATH = "C:\Users\DELL\AppData\Local\Microsoft\WinGet\Packages\OpenJS.NodeJS
    all four (request type only for New Request, matching the create form), and
    the server enforces the invariant the form implies: `request_type` only
    survives while `plan_class` is `new_request`.
-3. **Decide the Delivery vocabulary question** (§9.1, and §7 of
-   `05-light-plan.md` / §9 of `06-ux-design.md`). The three vocabularies
-   already exist as data in `lib/statusSets.ts` and are shown read-only on
-   `/admin`. Switching *new* projects to `DELIVERY_STATUS_SET` also requires
-   updating two things that reference canonical keys: the dashboard's
-   **Blocked** tile counts `status === "blocked"` (the delivery set has no
-   `blocked`), and `todo` is the default in the task-create and import paths
-   (the delivery set calls that state `not_started`). Do them together or tasks
-   will land in no Kanban column.
-4. **Import** — the user has said the real system will **query the source
-   systems directly** rather than import, and the demo is entered by hand. So
-   reference-based import upsert (`05-light-plan.md` §5 phase 4) is probably
-   **out of scope**; confirm before building it.
+3. ~~**Decide the Delivery vocabulary question**~~ — **RESOLVED 2026-10-13:
+   keep the default** (To Do · In Progress · Review · Blocked · Done). New
+   projects do not switch to Delivery; the set stays as per-project data and
+   the two canonical-key call sites (Blocked tile, `todo` default) are
+   unchanged.
+4. ~~**Import**~~ — **RESOLVED 2026-10-13: out of scope.** The real system will
+   query the source systems directly, so reference-based import upsert
+   (`05-light-plan.md` §8 phase 4) is cut. Only the user's decisions in §9
+   remain open (§9.2, `handle_by` shape).
 5. **Commit** — the working tree was empty at handover; keep it that way. The
    branch tracks `origin/local-hardening`, so `git push` is a plain push.
 
@@ -232,11 +229,15 @@ rows exist — `verify-dashboard-rollups.js` marks a task done and asserts
 
 ## 9. Open decisions for the human
 
-1. Should new projects seed the **Delivery** vocabulary (Not Started · In Progress · UAT ·
-   On Hold · Done · Rejected)? See §6.3 for the two call sites that must change with it.
+1. ~~Should new projects seed the **Delivery** vocabulary (Not Started · In
+   Progress · UAT · On Hold · Done · Rejected)?~~ **RESOLVED 2026-10-13: no.**
+   New projects keep the default vocabulary; Delivery stays as per-project data
+   in `lib/statusSets.ts`, shown read-only on `/admin`. No call-site changes
+   needed.
 2. Should `handle_by` remain "members" (already implemented as `task_members` + project
-   members), or become a single field?
-3. Is the workbook import needed at all, given the real system will query source systems
-   directly (§6.4)?
+   members), or become a single field? *(still open — not in the current brief)*
+3. ~~Is the workbook import needed at all, given the real system will query source systems
+   directly (§6.4)?~~ **RESOLVED 2026-10-13: out of scope.** The reference-based
+   import upsert (plan §8 phase 4) is cut; the basic Excel import stays as-is.
 4. Reference links can currently hold **any number** of ticket/CR/CRL rows per item. The
    user already chose "many"; revisit only if reporting needs it deduplicated.
