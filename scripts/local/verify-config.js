@@ -154,6 +154,91 @@ async function call(method, path, body, cookie) {
     `type=${plain.json?.project?.type ?? "null"}`
   );
 
+  /* ------------------------------ editing classification after creation ------ */
+
+  // The create form sets classification once. A typo can only be corrected if
+  // PATCH /api/projects/[id] exposes the same four fields the settings modal
+  // now sends — otherwise a wrong reference or type is permanent.
+  const editable = await call(
+    "POST",
+    "/api/projects",
+    {
+      name: `Editable classification ${stamp}`,
+      status: "active",
+      reference_no: "WRONG-001",
+      type: "report",
+      plan_class: "in_plan",
+    },
+    cookie
+  );
+  const editableId = editable.json?.project?.id;
+  check("created a project to edit", editable.status === 200 && !!editableId, `status=${editable.status}`);
+
+  const fixed = await call(
+    "PATCH",
+    `/api/projects/${editableId}`,
+    {
+      reference_no: "FIXED-002",
+      type: "cr",
+      plan_class: "new_request",
+      request_type: "audit_regulator",
+    },
+    cookie
+  );
+  check("classification can be edited after creation", fixed.status === 200, `status=${fixed.status}`);
+  check(
+    "the edit stores all four fields",
+    fixed.json?.project?.reference_no === "FIXED-002" &&
+      fixed.json?.project?.type === "cr" &&
+      fixed.json?.project?.plan_class === "new_request" &&
+      fixed.json?.project?.request_type === "audit_regulator",
+    `ref=${fixed.json?.project?.reference_no} type=${fixed.json?.project?.type} plan=${fixed.json?.project?.plan_class} req=${fixed.json?.project?.request_type}`
+  );
+
+  const rereadEdited = await call("GET", "/api/projects", undefined, cookie);
+  const foundEdited = (rereadEdited.json?.projects ?? []).find((p) => p.id === editableId);
+  check(
+    "the edited classification survives a re-read",
+    foundEdited?.reference_no === "FIXED-002" && foundEdited?.type === "cr",
+    `ref=${foundEdited?.reference_no} type=${foundEdited?.type}`
+  );
+
+  // Request type only applies to New Request work: leaving that plan class
+  // must clear it, and setting it on an In Plan project must not stick.
+  const demoted = await call("PATCH", `/api/projects/${editableId}`, { plan_class: "in_plan" }, cookie);
+  check(
+    "leaving New Request clears the request type",
+    demoted.json?.project?.request_type === null,
+    `req=${demoted.json?.project?.request_type}`
+  );
+
+  const reAdded = await call("PATCH", `/api/projects/${editableId}`, { request_type: "audit_regulator" }, cookie);
+  check(
+    "a request type on an In Plan project does not stick",
+    reAdded.json?.project?.request_type === null,
+    `req=${reAdded.json?.project?.request_type}`
+  );
+
+  const cleared = await call("PATCH", `/api/projects/${editableId}`, { reference_no: "" }, cookie);
+  check(
+    "a blank reference clears back to not-set",
+    cleared.json?.project?.reference_no === null,
+    `ref=${cleared.json?.project?.reference_no}`
+  );
+
+  // Tidy up: earlier projects in this suite stay (counts are measured as
+  // deltas), but these three exist only for the checks above.
+  const cleanup = await Promise.all([
+    call("DELETE", `/api/projects/${editableId}`, undefined, cookie),
+    call("DELETE", `/api/projects/${project?.id}`, undefined, cookie),
+    call("DELETE", `/api/projects/${plain.json?.project?.id}`, undefined, cookie),
+  ]);
+  check(
+    "cleaned up the classification test projects",
+    cleanup.every((r) => r.status === 200),
+    `statuses=${cleanup.map((r) => r.status).join(",")}`
+  );
+
   console.log("");
   if (failures > 0) {
     console.error(`${failures} check(s) FAILED`);

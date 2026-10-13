@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Modal from "./Modal";
 import { api, droppedColumnsMessage } from "@/lib/api";
+import { NEW_REQUEST_VALUE } from "@/lib/configLists";
 import type { Project, ProjectMember, ProjectMemberRole, ProjectStatus, UserPublic } from "@/types";
 
 const ICONS = [
@@ -50,6 +51,16 @@ export default function ProjectSettingsModal({
   const [icon, setIcon] = useState("folder");
   const [ownerId, setOwnerId] = useState("");
   const [defaultView, setDefaultView] = useState("kanban");
+  // Classification (settable at create time, editable here so a typo can be
+  // corrected). The option lists come from Admin, so a label changed there
+  // shows up here without a deploy.
+  const [referenceNo, setReferenceNo] = useState("");
+  const [projectType, setProjectType] = useState("");
+  const [planClass, setPlanClass] = useState("");
+  const [requestType, setRequestType] = useState("");
+  const [configLists, setConfigLists] = useState<
+    Record<string, { value: string; label: string }[]>
+  >({});
   const [savingGeneral, setSavingGeneral] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
   // Set when the database is missing a column this form writes (icon,
@@ -89,6 +100,14 @@ export default function ProjectSettingsModal({
     setTab(initialTab);
   }, [initialTab, open]);
 
+  // The classification lists live in Admin, so they are fetched here too —
+  // the same source the create form uses.
+  useEffect(() => {
+    api<{ lists: Record<string, { value: string; label: string }[]> }>("/api/config")
+      .then((d) => setConfigLists(d.lists ?? {}))
+      .catch((e) => console.warn("[ProjectSettingsModal] Could not load config lists:", e));
+  }, []);
+
   useEffect(() => {
     if (!project || !open) return;
     setName(project.name ?? "");
@@ -99,6 +118,10 @@ export default function ProjectSettingsModal({
     setIcon(project.icon ?? "folder");
     setOwnerId(project.owner_id ?? "");
     setDefaultView(project.default_view ?? "kanban");
+    setReferenceNo(project.reference_no ?? "");
+    setProjectType(project.type ?? "");
+    setPlanClass(project.plan_class ?? "");
+    setRequestType(project.request_type ?? "");
     setGeneralError(null);
     setWorkflowError(null);
     // Set when the database is missing a column the form writes (owner_id,
@@ -174,6 +197,10 @@ export default function ProjectSettingsModal({
             icon,
             owner_id: ownerId || null,
             default_view: defaultView,
+            reference_no: referenceNo.trim() || null,
+            type: projectType || null,
+            plan_class: planClass || null,
+            request_type: planClass === NEW_REQUEST_VALUE ? requestType || null : null,
           },
         }
       );
@@ -451,6 +478,73 @@ export default function ProjectSettingsModal({
                 placeholder="What is this project about?"
               />
             </div>
+
+            {/* Classification. Set at creation, correctable here. */}
+            <div className="md:col-span-2">
+              <label className="label">Reference</label>
+              <input
+                className="input font-mono"
+                value={referenceNo}
+                onChange={(e) => setReferenceNo(e.target.value)}
+                placeholder="e.g. PRO-25-08-0012"
+              />
+            </div>
+
+            <div>
+              <label className="label">Type</label>
+              <select
+                className="input"
+                value={projectType}
+                onChange={(e) => setProjectType(e.target.value)}
+              >
+                <option value="">Not set</option>
+                {(configLists.project_type ?? []).map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="label">Plan class</label>
+              <select
+                className="input"
+                value={planClass}
+                onChange={(e) => {
+                  setPlanClass(e.target.value);
+                  // Request type only applies to New Request work; leaving a
+                  // stale selection behind would send a value that
+                  // contradicts the plan class.
+                  if (e.target.value !== NEW_REQUEST_VALUE) setRequestType("");
+                }}
+              >
+                <option value="">Not set</option>
+                {(configLists.plan_class ?? []).map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {planClass === NEW_REQUEST_VALUE && (
+              <div>
+                <label className="label">Request type</label>
+                <select
+                  className="input"
+                  value={requestType}
+                  onChange={(e) => setRequestType(e.target.value)}
+                >
+                  <option value="">Not set</option>
+                  {(configLists.request_type ?? []).map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div>
               <label className="label">Status</label>

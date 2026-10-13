@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/requireUser";
 import { isProjectAdmin } from "@/lib/authorize";
+import { NEW_REQUEST_VALUE } from "@/lib/configLists";
 import { updateSkippingMissingColumns } from "@/lib/resilientInsert";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 
@@ -86,10 +87,41 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     "owner_id",
     "default_view",
     "archived_at",
+    // Classification: settable at create time and editable afterwards, so a
+    // typo made during creation can be corrected here. Values are keys from
+    // the configurable Admin lists, never a hard-coded enum.
+    "reference_no",
+    "type",
+    "plan_class",
+    "request_type",
   ];
 
   for (const key of allowed) {
     if (key in body) patch[key] = body[key];
+  }
+
+  // Blank classification fields mean "not set" (null), matching POST
+  // /api/projects. request_type only applies to New Request work, so it is
+  // cleared whenever the effective plan class says otherwise — the same rule
+  // the create form applies client-side.
+  for (const key of ["reference_no", "type", "plan_class", "request_type"] as const) {
+    if (key in patch) {
+      patch[key] = String(patch[key] ?? "").trim() || null;
+    }
+  }
+  if ("plan_class" in patch || "request_type" in patch) {
+    const { data: current } = await supabaseAdmin()
+      .from("projects")
+      .select("plan_class")
+      .eq("id", params.id)
+      .maybeSingle();
+    const effectivePlanClass =
+      "plan_class" in patch
+        ? (patch.plan_class as string | null)
+        : ((current?.plan_class as string | null) ?? null);
+    if (effectivePlanClass !== NEW_REQUEST_VALUE) {
+      patch.request_type = null;
+    }
   }
 
   if (patch.status === "archived" && !patch.archived_at) {
