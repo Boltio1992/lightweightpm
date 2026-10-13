@@ -10,7 +10,10 @@
     "db:clear": "node scripts/clear-db.js",
     "db:audit": "node scripts/audit-schema.js",
     "db:manifest": "node scripts/gen-schema-manifest.js",
-    "db:check": "node scripts/check-db-schema.js"
+    "db:check": "node scripts/check-db-schema.js",
+    "db:inspect": "node scripts/local/inspect-db.js ./data/lightpm.db",
+    "db:reset": "node scripts/reset-local-store.js --yes",
+    "verify:sse": "node scripts/local/verify-sse.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",

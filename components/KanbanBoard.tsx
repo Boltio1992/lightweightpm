@@ -18,7 +18,8 @@ import { PriorityBadge } from "./Badges";
 import { api, isOverdue } from "@/lib/api";
 import { fmtDate } from "@/lib/format";
 import { fadeScale, motionTransition } from "@/lib/motion";
-import { TASK_STATUSES, type Task, type TaskStatus } from "@/types";
+import { type Task, type TaskStatus } from "@/types";
+import { DEFAULT_STATUS_SET } from "@/lib/statusSets";
 
 function Card({
   task,
@@ -186,7 +187,7 @@ export default function KanbanBoard({
 
   const columns = projectStatuses && projectStatuses.length > 0
     ? projectStatuses.map((s) => ({ key: s.key, label: s.name, color: s.color }))
-    : TASK_STATUSES.map((s) => ({ key: s.key, label: s.label, color: s.color }));
+    : DEFAULT_STATUS_SET.map((s) => ({ key: s.key, label: s.label, color: s.color }));
 
   function onDragStart(e: DragStartEvent) {
     setActiveId(String(e.active.id));

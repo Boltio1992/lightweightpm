@@ -1,6 +1,13 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
+import {
+  loadStoreOrSeed as loadLocalStoreOrSeed,
+  saveStore as saveLocalStore,
+  backendDescription,
+} from "./localDb";
+import { publishChange } from "./events";
+import { asStatusRows } from "./statusSets";
 
 type AdminClient = SupabaseClient<any, any, any>;
 
@@ -15,6 +22,8 @@ interface Store {
   tasks: any[];
   task_comments: any[];
   task_activity: any[];
+  links: any[];
+  task_members: any[];
   notifications: any[];
 }
 
@@ -439,11 +448,40 @@ function getInitialStore(): Store {
         created_at: now,
       },
     ],
+    links: [],
+    task_members: [],
     notifications: [],
   };
 }
 
-const globalStore = (globalThis as any).__lightpm_store || ((globalThis as any).__lightpm_store = getInitialStore());
+function persistStore(store: Store, table?: string) {
+  try {
+    saveLocalStore(store);
+    // Live updates hang off this one choke point, which every write already
+    // passes through, so no query path had to change to gain them.
+    if (table) publishChange(table);
+  } catch (e) {
+    // Never fail a request because the local mirror could not be written, but
+    // stay loud: silent data loss is exactly the failure mode being fixed here.
+    console.error("[LightPM] failed to persist the local store:", e);
+  }
+}
+
+function bootstrapStore(): Store {
+  const g = globalThis as any;
+  if (g.__lightpm_store) return g.__lightpm_store;
+
+  const { store, seeded } = loadLocalStoreOrSeed(getInitialStore);
+  g.__lightpm_store = store;
+  console.info(
+    seeded
+      ? `[LightPM] seeded a new local store at ${backendDescription()}`
+      : `[LightPM] loaded local store from ${backendDescription()}`
+  );
+  return store;
+}
+
+const globalStore = bootstrapStore();
 
 function createMockClient(): AdminClient {
   return {
@@ -545,13 +583,7 @@ function createMockClient(): AdminClient {
               if (!store.project_statuses) store.project_statuses = [];
               for (const proj of inserted) {
                 if (!store.project_statuses.some((s: any) => s.project_id === proj.id)) {
-                  const defaults = [
-                    { name: "To Do", key: "todo", color: "#94A3B8", sort_order: 0, is_done: false },
-                    { name: "In Progress", key: "in_progress", color: "#185fa5", sort_order: 1, is_done: false },
-                    { name: "Review", key: "review", color: "#F59E0B", sort_order: 2, is_done: false },
-                    { name: "Blocked", key: "blocked", color: "#EF4444", sort_order: 3, is_done: false },
-                    { name: "Done", key: "done", color: "#10B981", sort_order: 4, is_done: true },
-                  ];
+                  const defaults = asStatusRows();
                   for (const d of defaults) {
                     store.project_statuses.push({
                       id: randomUUID(),
@@ -563,6 +595,7 @@ function createMockClient(): AdminClient {
               }
             }
 
+            persistStore(store, tableName);
             return { data: builder._format(inserted), error: null };
           }
 
@@ -579,6 +612,7 @@ function createMockClient(): AdminClient {
                 updated.push(list[i]);
               }
             }
+            persistStore(store, tableName);
             return { data: builder._format(updated), error: null };
           }
 
@@ -606,6 +640,7 @@ function createMockClient(): AdminClient {
               }
             }
 
+            persistStore(store, tableName);
             return { data: null, error: null };
           }
 
@@ -638,7 +673,10 @@ function createMockClient(): AdminClient {
             // returns the requested columns; the in-memory mock previously
             // returned full rows (including password_hash) regardless of the
             // projection, which leaked secrets in responses.
-            let base: any = row;
+            // Shallow clone first: with select("*") the projection branch is
+            // skipped, and deleting password_hash off `row` itself used to strip
+            // the stored hash out of the live store.
+            let base: any = { ...row };
             if (selectedCols && selectedCols.trim() !== "*") {
               const cols = selectedCols.split(",").map((c) => c.trim()).filter(Boolean);
               const projected: any = {};
@@ -704,6 +742,20 @@ function createMockClient(): AdminClient {
                   }
                 : null;
             } else if (tableName === "task_comments") {
+              const user = (store.users || []).find((u: any) => u.id === row.user_id);
+              formatted.user = user
+                ? {
+                    id: user.id,
+                    username: user.username,
+                    name: user.name,
+                    title: user.title,
+                    role: user.role,
+                    created_at: user.created_at,
+                  }
+                : null;
+            } else if (tableName === "task_members") {
+              // PostgREST embeds `user:users(...)` natively; the local store has
+              // to do the same or the members list comes back without a person.
               const user = (store.users || []).find((u: any) => u.id === row.user_id);
               formatted.user = user
                 ? {
@@ -829,11 +881,15 @@ export function clearMockStore(options: { preserveUsers?: boolean; reseed?: bool
     store.tasks = fresh.tasks;
     store.task_comments = fresh.task_comments;
     store.task_activity = fresh.task_activity;
+    store.links = fresh.links;
+    store.task_members = fresh.task_members;
     store.notifications = fresh.notifications;
   } else {
     store.tasks = [];
     store.task_comments = [];
     store.task_activity = [];
+    store.links = [];
+    store.task_members = [];
     store.projects = [];
     store.project_members = [];
     store.project_statuses = [];
@@ -841,5 +897,7 @@ export function clearMockStore(options: { preserveUsers?: boolean; reseed?: bool
       store.users = [];
     }
   }
+
+  persistStore(store);
 }
 

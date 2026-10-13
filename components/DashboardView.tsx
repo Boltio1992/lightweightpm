@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ProjectStatusBadge } from "@/components/Badges";
 import { countdownLabel, initials } from "@/lib/format";
-import type { AttentionItem, AttentionReason, DashboardData, ProjectHealth } from "@/lib/dashboard";
+import type { AttentionItem, AttentionReason, DashboardData, ProjectHealth, RollupRow } from "@/lib/dashboard";
 import type { TaskPriority } from "@/types";
 
 const REASON_CHIP: Record<AttentionReason, { label: string; chip: string }> = {
@@ -106,7 +106,7 @@ function AttentionRow({ item }: { item: AttentionItem }) {
 }
 
 export default function DashboardView({ data, todayLabel }: { data: DashboardData; todayLabel: string }) {
-  const { summary, attention, health, workload, trend } = data;
+  const { summary, attention, health, workload, trend, classification } = data;
 
   const attentionTotal = attention.items.length;
   const attentionPages = Math.max(1, Math.ceil(attentionTotal / ATTENTION_PAGE_SIZE));
@@ -117,6 +117,32 @@ export default function DashboardView({ data, todayLabel }: { data: DashboardDat
   const pageItems = attention.items.slice(pageStart, pageStart + ATTENTION_PAGE_SIZE);
 
   const maxOpen = Math.max(1, ...workload.map((w) => w.open));
+
+  /** A labelled bar per classification value, sized against its own total. */
+  function rollupList(rows: RollupRow[]) {
+    const total = rows.reduce((sum, row) => sum + row.count, 0);
+    if (total === 0) {
+      return <p className="px-4 py-6 text-center text-xs text-muted">No projects yet.</p>;
+    }
+    return (
+      <div className="divide-y divide-line">
+        {rows.map((row) => (
+          <div key={row.key || "unset"} className="flex items-center gap-3 px-4 py-2">
+            <span className="min-w-0 flex-1 truncate text-xs text-ink" title={row.label}>
+              {row.label}
+            </span>
+            <span className="h-1 w-20 flex-none overflow-hidden rounded-full bg-subtle">
+              <span
+                className="block h-full rounded-full bg-accent"
+                style={{ width: `${Math.round((row.count / total) * 100)}%` }}
+              />
+            </span>
+            <span className="w-8 flex-none text-right text-xs text-muted">{row.count}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
   const maxTrend = Math.max(1, ...trend.map((t) => t.count));
   const trendDelta = summary.completedLast7 - summary.completedPrev7;
 
@@ -298,6 +324,31 @@ export default function DashboardView({ data, todayLabel }: { data: DashboardDat
             </div>
           </section>
         </div>
+
+        {/* Portfolio mix. Classification exists for the legacy registers, so the
+            split is worth seeing before the action list. */}
+        <section className="card overflow-hidden">
+          <SectionHeader
+            title="Portfolio mix"
+            hint="How projects split by type and by plan class"
+            href="/admin"
+            linkLabel="Edit lists"
+          />
+          <div className="grid sm:grid-cols-2 sm:divide-x sm:divide-line">
+            <div>
+              <p className="px-4 pt-3 text-[11px] font-medium uppercase tracking-wide text-muted">
+                By type
+              </p>
+              {rollupList(classification.byType)}
+            </div>
+            <div className="border-t border-line sm:border-t-0">
+              <p className="px-4 pt-3 text-[11px] font-medium uppercase tracking-wide text-muted">
+                By plan class
+              </p>
+              {rollupList(classification.byPlanClass)}
+            </div>
+          </div>
+        </section>
 
         {/* What needs a decision — kept last: read the numbers first, then act. */}
         <section className="card overflow-hidden">

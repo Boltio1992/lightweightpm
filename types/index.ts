@@ -23,6 +23,13 @@ export type Project = {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  // Workflow classification (docs/redesign/05-light-plan.md §4). All three of
+  // `type`, `plan_class` and `request_type` hold keys from configurable lists,
+  // never a hard-coded enum.
+  reference_no: string | null;
+  type: string | null;
+  plan_class: string | null;
+  request_type: string | null;
 };
 
 export type ProjectStats = { total: number; done: number; overdue: number };
@@ -97,6 +104,7 @@ export type Task = {
   duration_days: number | null;
   percent_complete: number;
   sort_order: number;
+  reference_no: string | null;
   tags?: string[];
   created_by: string | null;
   created_at: string;
@@ -104,13 +112,38 @@ export type Task = {
   subtasks?: Task[];
 };
 
-export const TASK_STATUSES: { key: string; label: string; color: string; is_done: boolean }[] = [
-  { key: "todo", label: "To Do", color: "#94A3B8", is_done: false },
-  { key: "in_progress", label: "In Progress", color: "#12A594", is_done: false },
-  { key: "review", label: "Review", color: "#F59E0B", is_done: false },
-  { key: "blocked", label: "Blocked", color: "#EF4444", is_done: false },
-  { key: "done", label: "Done", color: "#10B981", is_done: true },
-];
+export type LinkKind = "ticket" | "change_request" | "change_release";
+export type LinkOwnerKind = "project" | "task";
+
+/**
+ * A reference from a project or task out to a record that lives in its own
+ * system (Ticket / Change Request / Change Release). `title` and
+ * `progress_percent` are typed by hand for now; once those systems are
+ * queryable they are refreshed in place and nothing else changes.
+ */
+export type ExternalLink = {
+  id: string;
+  owner_kind: LinkOwnerKind;
+  owner_id: string;
+  kind: LinkKind;
+  reference: string;
+  title: string | null;
+  progress_percent: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** People named on a project-less task; mirrors ProjectMember. */
+export type TaskMember = {
+  id: string;
+  task_id: string;
+  user_id: string;
+  role: ProjectMemberRole | string;
+  added_at: string;
+  user?: UserPublic;
+};
+
+// Task status vocabularies live in lib/statusSets.ts — one source of truth.
 
 export const PRIORITY_ORDER: TaskPriority[] = ["urgent", "high", "medium", "low"];
 

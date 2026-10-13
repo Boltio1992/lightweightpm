@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import AppShell from "@/components/AppShell";
+import LiveUpdates from "@/components/LiveUpdates";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
@@ -17,6 +18,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         }}
       />
       <AppShell user={user}>{children}</AppShell>
+      {/* Server-pushed invalidation: keeps open boards and the dashboard in
+          sync across browsers without polling. */}
+      <LiveUpdates />
     </>
   );
 }

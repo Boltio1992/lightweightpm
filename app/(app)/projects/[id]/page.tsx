@@ -9,6 +9,7 @@ import TaskInspector from "@/components/TaskInspector";
 import KanbanBoard from "@/components/KanbanBoard";
 import GanttTimeline from "@/components/GanttTimeline";
 import ProjectMembers from "@/components/ProjectMembers";
+import ReferenceLinks from "@/components/ReferenceLinks";
 import ProjectSettingsModal from "@/components/ProjectSettingsModal";
 import { ProjectStatusBadge } from "@/components/Badges";
 import { api, isOverdue, onTasksChanged } from "@/lib/api";
@@ -17,7 +18,7 @@ import { projectEmoji } from "@/lib/projectIcon";
 import { nestTasks } from "@/lib/tasks";
 import type { Project, ProjectMember, ProjectStatus, Task, UserPublic } from "@/types";
 
-type Tab = "list" | "kanban" | "timeline" | "members";
+type Tab = "list" | "kanban" | "timeline" | "members" | "references";
 
 export default function ProjectDetailPage() {
   const params = useParams<{ id: string }>();
@@ -180,6 +181,7 @@ export default function ProjectDetailPage() {
     { key: "list", label: "Tasks", count: stats.total },
     { key: "timeline", label: "Timeline" },
     { key: "members", label: "Members", count: members.length },
+    { key: "references", label: "References" },
   ];
 
   return (
@@ -403,10 +405,19 @@ export default function ProjectDetailPage() {
             onEdit={handleTaskClick}
             onAddSub={openSubtask}
             onChanged={loadTasks}
+            // Every row here is this project, so the project column is noise.
+            showProject={false}
           />
         )}
         {tab === "timeline" && <GanttTimeline tasks={tasks} onEdit={handleTaskClick} />}
         {tab === "members" && <ProjectMembers projectId={projectId} onChanged={load} />}
+        {tab === "references" && (
+          <div className="card p-4">
+            {/* A project links to many tickets and change requests over its life,
+                so the list belongs beside the work, not buried in one field. */}
+            <ReferenceLinks ownerKind="project" ownerId={projectId} />
+          </div>
+        )}
       </div>
 
       {/* Task Creation / Full Edit Modal */}

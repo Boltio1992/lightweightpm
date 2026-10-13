@@ -87,10 +87,15 @@ function splitSelect(cols) {
     let p = part.trim();
     if (!p || p === "*") continue;
     p = p.replace(/\s+/g, "");
+    // An embedded resource - `users(...)` or `alias:users(...)` - is a join for
+    // PostgREST, not a column of the table being queried, so skip it whole.
+    // (Cutting at "(" used to leave the resource NAME behind, which then looked
+    // like a column: task_members reported a phantom "users" column because of
+    // `user:users(...)` in its select.)
+    if (p.includes("(")) continue;
     const alias = p.match(/^([a-zA-Z0-9_]+):/); // alias:column
     if (alias) p = p.slice(alias[0].length);
-    p = p.split("!")[0]; // drop FK hints: users!tasks_assignee_id_fkey(...)
-    p = p.split("(")[0]; // drop embedded resources
+    p = p.split("!")[0]; // drop FK hints
     p = p.split(".")[0]; // drop json paths
     if (/^[a-z_][a-z0-9_]*$/.test(p)) names.push(p);
   }

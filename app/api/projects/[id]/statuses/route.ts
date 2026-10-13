@@ -4,14 +4,11 @@ import { isMissingRelationError } from "@/lib/resilientInsert";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 import { randomUUID } from "crypto";
 import type { ProjectStatus } from "@/types";
+import { asStatusRows } from "@/lib/statusSets";
 
-const DEFAULT_STATUSES = [
-  { name: "To Do", key: "todo", color: "#94A3B8", sort_order: 0, is_done: false },
-  { name: "In Progress", key: "in_progress", color: "#12A594", sort_order: 1, is_done: false },
-  { name: "Review", key: "review", color: "#F59E0B", sort_order: 2, is_done: false },
-  { name: "Blocked", key: "blocked", color: "#EF4444", sort_order: 3, is_done: false },
-  { name: "Done", key: "done", color: "#10B981", sort_order: 4, is_done: true },
-];
+// The fallback vocabulary for a project that has none of its own yet. Sourced
+// from the single status vocabulary so it cannot drift from the rest of the app.
+const DEFAULT_STATUSES = asStatusRows();
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const auth = await requireUser();

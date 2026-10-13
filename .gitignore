@@ -15,3 +15,8 @@ next-env.d.ts
 
 # stale build dirs from renames
 .next-stale-*
+
+# local-first data store (sqlite/json)
+data/
+# preserved hosted credentials
+.env.supabase.local.bak

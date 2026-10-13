@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { api, fmtDate, isOverdue } from "@/lib/api";
 import { PriorityBadge } from "./Badges";
+import ReferenceLinks from "./ReferenceLinks";
+import TaskMembers from "./TaskMembers";
 import type { ProjectMember, ProjectStatus, Task, TaskActivity, TaskComment, TaskPriority, UserPublic } from "@/types";
 
 export default function TaskInspector({
@@ -638,6 +640,21 @@ export default function TaskInspector({
                     </button>
                   </form>
                 </div>
+
+                {task && (
+                  <>
+                    {/* Members first: who is handling it. Kept apart from the
+                        assignee, which is who owns it right now. */}
+                    <div className="border-t border-line pt-5">
+                      <TaskMembers taskId={task.id} assignableUsers={assignableUsers} />
+                    </div>
+
+                    {/* References out to the ticket / CR / CRL systems. */}
+                    <div className="border-t border-line pt-5">
+                      <ReferenceLinks ownerKind="task" ownerId={task.id} />
+                    </div>
+                  </>
+                )}
               </>
             )}
 

@@ -1,4 +1,5 @@
 import { isDueSoon, isOverdue } from "@/lib/api";
+import { seedConfigListsIfEmpty } from "@/lib/configStore";
 import { daysFromToday } from "@/lib/format";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 
@@ -49,6 +50,9 @@ export type WorkloadRow = {
 
 export type TrendPoint = { date: string; label: string; count: number };
 
+/** One row of a portfolio rollup: a config key, its label, and how many. */
+export type RollupRow = { key: string; label: string; count: number };
+
 export type DashboardData = {
   summary: {
     totalProjects: number;
@@ -70,7 +74,45 @@ export type DashboardData = {
   workload: WorkloadRow[];
   trend: TrendPoint[];
   trendSource: "activity" | "updated";
+  /**
+   * How the portfolio splits by the classification introduced for the legacy
+   * registers. Labels come from the configurable lists, so a renamed option
+   * reads correctly here without a deploy.
+   */
+  classification: { byType: RollupRow[]; byPlanClass: RollupRow[] };
 };
+
+/**
+ * Count projects by one classification field.
+ *
+ * Keys are stored values, so an option deleted from Admin still counts (its
+ * label falls back to the raw key) — losing a label must never silently drop
+ * work from a total.
+ */
+function rollup(
+  projects: RawProject[],
+  field: "type" | "plan_class",
+  labels: Map<string, string>
+): RollupRow[] {
+  const counts = new Map<string, number>();
+  for (const project of projects) {
+    const raw = (project as Record<string, unknown>)[field];
+    const key = typeof raw === "string" && raw.trim() ? raw.trim() : "";
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([key, count]) => ({
+      key,
+      label: key ? labels.get(key) ?? key : "Not set",
+      count,
+    }))
+    .sort((a, b) => {
+      // "Not set" last: it is a gap to close, not a category to compare.
+      if (a.key === "") return 1;
+      if (b.key === "") return -1;
+      return b.count - a.count || a.label.localeCompare(b.label);
+    });
+}
 
 /* Loosely typed on purpose: the live database can be a migration behind the
    schema file, so anything newer than the core columns is optional. */
@@ -117,9 +159,12 @@ export async function getDashboardData(): Promise<DashboardData> {
 
   // Plain selects + explicit lookups: embedded FK-hinted joins are brittle and
   // were silently falling back to slower paths.
-  const [tasksRes, projectsRes] = await Promise.all([
+  const [tasksRes, projectsRes, configRes] = await Promise.all([
     db.from("tasks").select("*"),
     db.from("projects").select("*"),
+    // Labels for the classification rollups. A store without this table (an older
+    // database) must not blank the dashboard, so the error is not fatal.
+    db.from("config_options").select("list_key, value, label"),
   ]);
 
   if (tasksRes.error) throw new Error(tasksRes.error.message);
@@ -142,6 +187,27 @@ export async function getDashboardData(): Promise<DashboardData> {
       (u) => [u.id, u.name || u.username] as const
     )
   );
+
+  const configRows = ((configRes as { data?: unknown })?.data ?? []) as Array<{
+    list_key: string;
+    value: string;
+    label: string;
+  }>;
+  const configLabels = (listKey: string) =>
+    new Map(
+      configRows
+        .filter((row) => row.list_key === listKey)
+        .map((row) => [row.value, row.label] as const)
+    );
+
+  // The lists may not have been seeded yet on a fresh store, in which case the
+  // rollups would show raw keys. The helper is idempotent and cheap.
+  if (configRows.length === 0) {
+    await seedConfigListsIfEmpty(db);
+    const retry = await db.from("config_options").select("list_key, value, label");
+    configRows.length = 0;
+    configRows.push(...(((retry as { data?: unknown })?.data ?? []) as typeof configRows));
+  }
 
   const projectNames = new Map(projects.map((p) => [p.id, p.name] as const));
 
@@ -381,5 +447,9 @@ export async function getDashboardData(): Promise<DashboardData> {
     workload,
     trend,
     trendSource,
+    classification: {
+      byType: rollup(projects, "type", configLabels("project_type")),
+      byPlanClass: rollup(projects, "plan_class", configLabels("plan_class")),
+    },
   };
 }

@@ -183,8 +183,8 @@ h1, h2, h3, p, span, a, button, label {
   /* Shared column template for the task list header and every row. Header and
      rows use the exact same grid, so columns cannot drift apart. Columns are
      switched off (not resized) per breakpoint — keep the cell order in sync
-     with the template: caret, checkbox, title, status+priority, duration,
-     progress, deadline, assignee, actions. */
+     with the template: caret, checkbox, title, project, status+priority,
+     duration, progress, deadline, assignee, actions. */
   .row-grid {
     display: grid;
     align-items: center;
@@ -209,6 +209,12 @@ h1, h2, h3, p, span, a, button, label {
       /* + duration, assignee. The sidebar takes 224px from md up, so these two
          only earn their columns once there is genuinely room for them. */
       grid-template-columns: 20px 20px minmax(0, 1fr) 168px 52px 84px 104px 124px 84px;
+    }
+    /* One more column for the project - but only for a list that spans projects.
+       The project detail page omits it, because every row there is the same
+       project and repeating the name is noise. */
+    .row-grid.with-project {
+      grid-template-columns: 20px 20px minmax(0, 1fr) 112px 168px 52px 84px 104px 124px 84px;
     }
   }
 

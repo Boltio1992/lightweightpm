@@ -15,6 +15,7 @@ import ProjectCard, {
 } from "@/components/ProjectCard";
 import { ProjectStatusBadge } from "@/components/Badges";
 import { api, droppedColumnsMessage } from "@/lib/api";
+import { NEW_REQUEST_VALUE } from "@/lib/configLists";
 import { initials } from "@/lib/format";
 import { PROJECT_ICONS, projectEmoji } from "@/lib/projectIcon";
 import type { Project, ProjectWithStats } from "@/types";
@@ -52,6 +53,13 @@ export default function ProjectsPage() {
   // New project modal state
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [referenceNo, setReferenceNo] = useState("");
+  const [projectType, setProjectType] = useState("");
+  const [planClass, setPlanClass] = useState("");
+  const [requestType, setRequestType] = useState("");
+  const [configLists, setConfigLists] = useState<
+    Record<string, { value: string; label: string }[]>
+  >({});
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [icon, setIcon] = useState("folder");
@@ -74,6 +82,14 @@ export default function ProjectsPage() {
     load();
   }, []);
 
+  // The classification lists come from Admin, so a label changed there shows up
+  // here without a deploy.
+  useEffect(() => {
+    api<{ lists: Record<string, { value: string; label: string }[]> }>("/api/config")
+      .then((d) => setConfigLists(d.lists ?? {}))
+      .catch((e) => console.warn("[ProjectsPage] Could not load config lists:", e));
+  }, []);
+
   async function create(e: React.FormEvent) {
     e.preventDefault();
     const trimmedName = name.trim();
@@ -94,6 +110,10 @@ export default function ProjectsPage() {
           end_date: endDate || null,
           icon,
           default_view: defaultView,
+          reference_no: referenceNo.trim() || null,
+          type: projectType || null,
+          plan_class: planClass || null,
+          request_type: planClass === NEW_REQUEST_VALUE ? requestType || null : null,
         },
       });
       await load();
@@ -105,6 +125,10 @@ export default function ProjectsPage() {
       }
       setName("");
       setDescription("");
+      setReferenceNo("");
+      setProjectType("");
+      setPlanClass("");
+      setRequestType("");
       setStartDate("");
       setEndDate("");
       setIcon("folder");
@@ -469,6 +493,70 @@ export default function ProjectsPage() {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Objectives, deliverables, and scope…"
             />
+          </div>
+
+          {/* Classification. Every option here is a key from a list in Admin, so
+              the vocabulary can change without touching this form. */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label className="label">Reference</label>
+              <input
+                className="input font-mono"
+                value={referenceNo}
+                onChange={(e) => setReferenceNo(e.target.value)}
+                placeholder="e.g. PRO-25-08-0012"
+              />
+            </div>
+            <div>
+              <label className="label">Type</label>
+              <select
+                className="input"
+                value={projectType}
+                onChange={(e) => setProjectType(e.target.value)}
+              >
+                <option value="">Not set</option>
+                {(configLists.project_type ?? []).map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label className="label">Plan class</label>
+              <select
+                className="input"
+                value={planClass}
+                onChange={(e) => setPlanClass(e.target.value)}
+              >
+                <option value="">Not set</option>
+                {(configLists.plan_class ?? []).map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {planClass === NEW_REQUEST_VALUE && (
+              <div>
+                <label className="label">Request type</label>
+                <select
+                  className="input"
+                  value={requestType}
+                  onChange={(e) => setRequestType(e.target.value)}
+                >
+                  <option value="">Not set</option>
+                  {(configLists.request_type ?? []).map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

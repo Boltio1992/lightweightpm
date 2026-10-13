@@ -83,6 +83,12 @@ export async function POST(req: NextRequest) {
     owner_id: body?.owner_id ?? auth.id,
     default_view: body?.default_view ?? "kanban",
     created_by: auth.id,
+    // Classification (phase 1 columns). Values are keys from the configurable
+    // lists in Admin, never a hard-coded enum.
+    reference_no: body?.reference_no ? String(body.reference_no).trim() || null : null,
+    type: body?.type ? String(body.type).trim() || null : null,
+    plan_class: body?.plan_class ? String(body.plan_class).trim() || null : null,
+    request_type: body?.request_type ? String(body.request_type).trim() || null : null,
   };
 
   // Newer columns (accent_color, icon, default_view, percent_complete) may not

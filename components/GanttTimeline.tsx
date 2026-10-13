@@ -5,6 +5,7 @@ import { StatusDot, STATUS_COLOR, STATUS_LABEL } from "@/components/Badges";
 import { fmtDate, initials, startOfDay } from "@/lib/format";
 import { isOverdue } from "@/lib/api";
 import type { Task } from "@/types";
+import { statusKeys } from "@/lib/statusSets";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -27,7 +28,9 @@ type GroupBy = "none" | "status" | "assignee";
 
 const ZOOM_DAY_WIDTH: Record<Zoom, number> = { day: 34, week: 14, month: 5 };
 
-const STATUS_ORDER = ["todo", "in_progress", "review", "blocked", "done"];
+// Canonical ordering for the header and for grouping. Unknown keys a project
+// defines itself are appended after these (see the grouping code below).
+const STATUS_ORDER = statusKeys();
 
 function toDate(s?: string | null) {
   return s ? new Date(`${s.slice(0, 10)}T00:00:00`) : null;

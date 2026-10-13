@@ -14,12 +14,14 @@ function Row({
   onEdit,
   onAddSub,
   onChanged,
+  showProject = true,
 }: {
   task: Task;
   depth: number;
   onEdit: (t: Task) => void;
   onAddSub: (t: Task) => void;
   onChanged: () => void;
+  showProject?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(true);
@@ -54,7 +56,9 @@ function Row({
         animate={reduceMotion ? undefined : fadeUp.animate}
         exit={reduceMotion ? undefined : fadeUp.exit}
         transition={reduceMotion ? { duration: 0 } : motionTransition.fast}
-        className="row-grid task-indent group border-b border-line px-4 py-2.5 hover:bg-subtle"
+        className={`row-grid${
+          showProject ? " with-project" : ""
+        } task-indent group border-b border-line px-4 py-2.5 hover:bg-subtle`}
       >
         {/* 1 — expander. w-full rather than w-5: the column is 20px on desktop
             and 32px on a phone, and the caret should be tappable across all of
@@ -105,6 +109,15 @@ function Row({
             </span>
           </button>
 
+          {/* Below xl the project column is switched off, so the name sits here.
+              Only shown when there IS a project: a project-less task is a normal
+              task, not a defect to be labelled. */}
+          {showProject && task.project?.name && (
+            <span className="mt-0.5 block truncate text-xs text-muted xl:hidden">
+              {task.project.name}
+            </span>
+          )}
+
           {/* Phones: the columns to the right are switched off, so the three
               things worth seeing move under the title. */}
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 sm:hidden">
@@ -125,6 +138,18 @@ function Row({
             )}
           </div>
         </div>
+
+        {/* 3b — project. A real column once there is room (xl); below that it
+            sits under the title instead, so it is never invisible. A task with
+            no project reads "—" rather than being blank. */}
+        {showProject && (
+          <span
+            className="hidden min-w-0 truncate text-xs text-muted xl:block"
+            title={task.project?.name ?? "No project"}
+          >
+            {task.project?.name ?? "—"}
+          </span>
+        )}
 
         {/* 4 — priority and status, side by side and never the same shape */}
         <div className="hidden min-w-0 items-center gap-2 sm:flex">
@@ -229,6 +254,7 @@ function Row({
                   onEdit={onEdit}
                   onAddSub={onAddSub}
                   onChanged={onChanged}
+                  showProject={showProject}
                 />
               ))}
             </motion.div>
@@ -244,20 +270,27 @@ export default function TaskList({
   onEdit,
   onAddSub,
   onChanged,
+  showProject = true,
 }: {
   tasks: Task[];
   onEdit: (t: Task) => void;
   onAddSub: (t: Task) => void;
   onChanged: () => void;
+  showProject?: boolean;
 }) {
   return (
     <div className="card overflow-hidden">
       {/* Same .row-grid template as the rows, so every label sits above the
           column it belongs to instead of approximately near it. */}
-      <div className="row-grid hidden border-b border-line bg-subtle px-4 py-2 text-xs font-medium text-muted sm:grid">
+      <div
+        className={`row-grid${
+          showProject ? " with-project" : ""
+        } hidden border-b border-line bg-subtle px-4 py-2 text-xs font-medium text-muted sm:grid`}
+      >
         <span aria-hidden="true" />
         <span aria-hidden="true" />
         <span>Task</span>
+        {showProject && <span className="hidden xl:block">Project</span>}
         <span>Priority / status</span>
         <span className="hidden text-center xl:block">Dur.</span>
         <span className="hidden lg:block">Progress</span>
@@ -268,7 +301,15 @@ export default function TaskList({
       </div>
       <AnimatePresence initial={false}>
         {tasks.map((t) => (
-          <Row key={t.id} task={t} depth={0} onEdit={onEdit} onAddSub={onAddSub} onChanged={onChanged} />
+          <Row
+            key={t.id}
+            task={t}
+            depth={0}
+            onEdit={onEdit}
+            onAddSub={onAddSub}
+            onChanged={onChanged}
+            showProject={showProject}
+          />
         ))}
       </AnimatePresence>
       {tasks.length === 0 && (

@@ -8,7 +8,8 @@ import type { UserPublic } from "@/types";
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: "home" },
   { href: "/projects", label: "Projects", icon: "folder" },
-  { href: "/tasks", label: "My Tasks", icon: "check" },
+  { href: "/tasks", label: "Tasks", icon: "check" },
+  { href: "/admin", label: "Admin", icon: "settings" },
 ];
 
 function Icon({ name }: { name: string }) {
@@ -36,6 +37,17 @@ function Icon({ name }: { name: string }) {
         <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
           <rect x="3" y="3" width="18" height="18" rx="3" />
           <path d="m8 12 3 3 5-6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    case "settings":
+      return (
+        <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <circle cx="12" cy="12" r="3" />
+          <path
+            d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 1.6 14H1.4a2 2 0 1 1 0-4h.2A1.7 1.7 0 0 0 3 7.1a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 7 2.6h.1A1.7 1.7 0 0 0 8.3 1V.8a2 2 0 1 1 4 0v.2A1.7 1.7 0 0 0 15 2.6a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.6 1.2h.2a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.6 1.1Z"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
       );
     default:

@@ -1,13 +1,15 @@
 import type { TaskPriority, TaskStatus } from "@/types";
+import { DEFAULT_STATUS_SET } from "@/lib/statusSets";
 
 /* Status and priority are different things and never share a shape:
    status is a pill with a coloured dot, priority is a flag with a label.
    That way "urgent" can never be mistaken for "blocked". */
 
-/* Single source of truth for status colour — badges, dots and the timeline bars
-   all read the same value, so "blocked" is one red everywhere. The values are
-   CSS variables so the palette flips with the theme. */
-export const STATUS_COLOR: Record<TaskStatus, string> = {
+/* The theme palette for the canonical statuses. These are CSS variables so the
+   colour flips with the theme, which is why they are not the hex values in
+   lib/statusSets.ts (those are what gets stored on a status row). The keys must
+   stay in step with DEFAULT_STATUS_SET. */
+export const STATUS_COLOR: Record<string, string> = {
   todo: "var(--color-muted)",
   in_progress: "var(--color-accent)",
   review: "var(--color-warn)",
@@ -15,15 +17,13 @@ export const STATUS_COLOR: Record<TaskStatus, string> = {
   done: "var(--color-good)",
 };
 
-export const STATUS_LABEL: Record<TaskStatus, string> = {
-  todo: "To Do",
-  in_progress: "In Progress",
-  review: "Review",
-  blocked: "Blocked",
-  done: "Done",
-};
+/* Labels come from the single status vocabulary, so a relabelled status reads
+   the same text everywhere. */
+export const STATUS_LABEL: Record<string, string> = Object.fromEntries(
+  DEFAULT_STATUS_SET.map((s) => [s.key, s.label])
+);
 
-const STATUS_STYLE: Record<TaskStatus, { dot: string; chip: string }> = {
+const STATUS_STYLE: Record<string, { dot: string; chip: string }> = {
   todo: { dot: STATUS_COLOR.todo, chip: "bg-subtle text-ink" },
   in_progress: { dot: STATUS_COLOR.in_progress, chip: "bg-accentSoft text-accent" },
   review: { dot: STATUS_COLOR.review, chip: "bg-warnSoft text-warn" },
@@ -31,8 +31,12 @@ const STATUS_STYLE: Record<TaskStatus, { dot: string; chip: string }> = {
   done: { dot: STATUS_COLOR.done, chip: "bg-goodSoft text-good" },
 };
 
+/* A project may define its own statuses (UAT, On Hold, ...), so an unknown key
+   is normal rather than an error - without this, style.chip threw. */
+const NEUTRAL_STATUS_STYLE = { dot: "var(--color-muted)", chip: "bg-subtle text-ink" };
+
 export function StatusBadge({ status }: { status: TaskStatus }) {
-  const style = STATUS_STYLE[status];
+  const style = STATUS_STYLE[status] ?? NEUTRAL_STATUS_STYLE;
   return (
     <span className={`chip ${style.chip}`}>
       <span

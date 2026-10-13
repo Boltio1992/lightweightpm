@@ -13,7 +13,8 @@ create table if not exists projects (
   percent_complete integer check (percent_complete is null or percent_complete between 0 and 100),
   accent_color text not null default '#12A594', icon text not null default 'folder', owner_id uuid references users(id) on delete set null,
   default_view text not null default 'kanban', archived_at timestamptz,
-  created_by uuid references users(id) on delete set null, created_at timestamptz not null default now(), updated_at timestamptz not null default now()
+  created_by uuid references users(id) on delete set null, created_at timestamptz not null default now(), updated_at timestamptz not null default now(),
+  reference_no text, type text, plan_class text, request_type text
 );
 
 create table if not exists project_statuses (
@@ -39,6 +40,7 @@ create table if not exists tasks (
   start_date date, due_date date, duration_days integer check (duration_days is null or duration_days >= 0),
   percent_complete integer not null default 0 check (percent_complete between 0 and 100), sort_order integer not null default 0,
   tags text[] default array[]::text[],
+  reference_no text,
   created_by uuid references users(id) on delete set null, created_at timestamptz not null default now(), updated_at timestamptz not null default now()
 );
 
@@ -58,6 +60,50 @@ create table if not exists task_activity (
   details text,
   created_at timestamptz not null default now()
 );
+
+-- References out to Ticket / Change Request / Change Release. Those records live
+-- in their own systems; `title` and `progress_percent` are typed by hand for the
+-- demo and become values pulled by a direct query once those systems are
+-- reachable. `kind` + `reference` are the query key.
+create table if not exists links (
+  id uuid primary key default gen_random_uuid(),
+  owner_kind text not null check (owner_kind in ('project', 'task')),
+  owner_id uuid not null,
+  kind text not null check (kind in ('ticket', 'change_request', 'change_release')),
+  reference text not null,
+  title text,
+  progress_percent integer check (progress_percent is null or progress_percent between 0 and 100),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- People named on a project-less task; mirrors project_members.
+create table if not exists task_members (
+  id uuid primary key default gen_random_uuid(),
+  task_id uuid not null references tasks(id) on delete cascade,
+  user_id uuid not null references users(id) on delete cascade,
+  role text not null default 'member',
+  added_at timestamptz not null default now(),
+  unique (task_id, user_id)
+);
+
+create index if not exists idx_links_owner on links(owner_kind, owner_id);
+create index if not exists idx_task_members_task on task_members(task_id);
+
+-- Configurable lists: project type, plan class, request type. One table rather
+-- than one per list - they all have the same shape, a stable value plus an
+-- editable label in a chosen order.
+create table if not exists config_options (
+  id uuid primary key default gen_random_uuid(),
+  list_key text not null,
+  value text not null,
+  label text not null,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  unique (list_key, value)
+);
+
+create index if not exists idx_config_options_list on config_options(list_key);
 
 create index if not exists idx_tasks_project on tasks(project_id);
 create index if not exists idx_tasks_parent on tasks(parent_task_id);
@@ -82,6 +128,9 @@ alter table project_members enable row level security;
 alter table tasks enable row level security;
 alter table task_comments enable row level security;
 alter table task_activity enable row level security;
+alter table links enable row level security;
+alter table task_members enable row level security;
+alter table config_options enable row level security;
 
 insert into project_statuses (project_id, name, key, color, sort_order, is_done)
 select id, 'To Do', 'todo', '#9AA1AC', 0, false

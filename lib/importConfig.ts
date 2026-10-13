@@ -1,6 +1,8 @@
 // Shared constants for the Excel import flow.
 // Used by BOTH the template generator and the import parser so they never drift.
 
+import { statusKeys } from "@/lib/statusSets";
+
 /** Rows whose first cell starts with this prefix are documentation, not data. */
 export const SAMPLE_PREFIX = "SAMPLE - ";
 
@@ -90,7 +92,9 @@ export const PROJECT_ICONS = [
   "bookmark",
 ];
 export const TASK_PRIORITIES = ["low", "medium", "high", "urgent"];
-export const TASK_STATUS_KEYS = ["todo", "in_progress", "review", "blocked", "done"];
+// Fallback keys for rows with no project of their own. Rows inside a project
+// resolve against that project's own statuses first (see app/api/import/route.ts).
+export const TASK_STATUS_KEYS = statusKeys();
 
 export const REFERENCE_ROWS: string[][] = [
   ["How to use this template", ""],
@@ -105,7 +109,7 @@ export const REFERENCE_ROWS: string[][] = [
   ["Projects: Icon", PROJECT_ICONS.join(", ") + " (default: folder)"],
   ["Projects: Default View", PROJECT_VIEWS.join(", ") + " (default: kanban)"],
   ["Tasks: Title*", "Required."],
-  ["Tasks: Project", "Project name. Leave empty for a standalone task (no project)."],
+  ["Tasks: Project", "Project name. Leave empty for a task that belongs to no project."],
   ["Tasks: Parent Task", "Title of another task in the same project — either an existing LightPM task or another row in this file."],
   ["Tasks: Status", TASK_STATUS_KEYS.join(", ") + " — labels like 'In Progress' also work, as do the project's custom statuses. Unknown values fall back to todo."],
   ["Tasks: Priority", TASK_PRIORITIES.join(", ") + " (default: medium)"],
