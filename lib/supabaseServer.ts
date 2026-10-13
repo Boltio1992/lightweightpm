@@ -483,6 +483,45 @@ function bootstrapStore(): Store {
 
 const globalStore = bootstrapStore();
 
+/**
+ * Compare a stored value against a filter value the way PostgREST's
+ * gt/gte/lt/lte do. ISO-8601 timestamp strings are compared as instants
+ * (format variance must not silently drop rows); anything non-date —
+ * numbers, booleans, plain strings — falls back to native comparison.
+ */
+function compareValues(rowVal: any, filterVal: any, op: "gt" | "gte" | "lt" | "lte"): boolean {
+  if (rowVal == null || filterVal == null) return false;
+  const rowNum = typeof rowVal === "number" ? rowVal : Date.parse(rowVal);
+  const filterNum = typeof filterVal === "number" ? filterVal : Date.parse(filterVal);
+  const bothDates = !Number.isNaN(rowNum) && !Number.isNaN(filterNum);
+  const a = bothDates ? rowNum : rowVal;
+  const b = bothDates ? filterNum : filterVal;
+  switch (op) {
+    case "gt":
+      return a > b;
+    case "gte":
+      return a >= b;
+    case "lt":
+      return a < b;
+    case "lte":
+      return a <= b;
+  }
+}
+
+/**
+ * Translate one SQL LIKE pattern (% and _ wildcards) into an anchored RegExp.
+ * Case-sensitive, matching PostgREST's `like` (as opposed to `ilike`).
+ */
+function likeToRegExp(pattern: string): RegExp {
+  let source = "^";
+  for (const ch of String(pattern)) {
+    if (ch === "%") source += "[\\s\\S]*";
+    else if (ch === "_") source += "[\\s\\S]";
+    else source += ch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+  return new RegExp(`${source}$`);
+}
+
 function createMockClient(): AdminClient {
   return {
     from(tableName: string) {
@@ -526,6 +565,36 @@ function createMockClient(): AdminClient {
           if (op === "is") {
             filters.push((row) => row[column] !== value);
           }
+          return builder;
+        },
+        neq(column: string, value: any) {
+          filters.push((row) => row[column] !== value);
+          return builder;
+        },
+        gt(column: string, value: any) {
+          filters.push((row) => compareValues(row[column], value, "gt"));
+          return builder;
+        },
+        gte(column: string, value: any) {
+          filters.push((row) => compareValues(row[column], value, "gte"));
+          return builder;
+        },
+        lt(column: string, value: any) {
+          filters.push((row) => compareValues(row[column], value, "lt"));
+          return builder;
+        },
+        lte(column: string, value: any) {
+          filters.push((row) => compareValues(row[column], value, "lte"));
+          return builder;
+        },
+        like(column: string, pattern: string) {
+          const rx = likeToRegExp(pattern);
+          filters.push((row) => {
+            const v = row[column];
+            // SQL: column LIKE pattern is NULL (not true) when the column is NULL.
+            if (v == null) return false;
+            return rx.test(String(v));
+          });
           return builder;
         },
         in(column: string, values: any[]) {

@@ -100,7 +100,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
 
     if (entries.length > 0) {
-      void db.from("task_activity").insert(entries);
+      // Fire-and-forget, but real: a PostgREST builder (and the local store's
+      // mock of one) is lazy and only executes when adopted, so `void builder`
+      // alone silently drops the row. Promise.resolve adopts the thenable,
+      // which runs the insert; the catch keeps a failed log write from
+      // crashing the request.
+      void Promise.resolve(db.from("task_activity").insert(entries)).catch((e) =>
+        console.error("[LightPM] failed to log task activity:", e)
+      );
     }
   }
 

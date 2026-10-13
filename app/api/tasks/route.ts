@@ -101,12 +101,16 @@ export async function POST(req: NextRequest) {
   }
 
   // Fire-and-forget: the activity log must never block the task response.
-  void db.from("task_activity").insert({
-    task_id: data.id,
-    user_id: auth.id,
-    action: "created",
-    details: "created the task",
-  });
+  // The builder must still be adopted (it is lazy and only executes when
+  // awaited), otherwise the row is silently dropped on every backend.
+  void Promise.resolve(
+    db.from("task_activity").insert({
+      task_id: data.id,
+      user_id: auth.id,
+      action: "created",
+      details: "created the task",
+    })
+  ).catch((e) => console.error("[LightPM] failed to log task activity:", e));
 
   try {
     const task = await fetchTaskById(data.id);

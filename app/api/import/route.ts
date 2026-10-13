@@ -581,15 +581,19 @@ export async function POST(req: NextRequest) {
   }
 
   // One batched activity entry per created task (mirrors the single-create flow).
+  // The builder is adopted, not just discarded: an un-awaited PostgREST builder
+  // is lazy and would never execute, silently dropping the log rows.
   if (createdTaskIds.length > 0) {
-    void db.from("task_activity").insert(
-      createdTaskIds.map((id) => ({
-        task_id: id,
-        user_id: auth.id,
-        action: "created",
-        details: "imported the task from Excel",
-      }))
-    );
+    void Promise.resolve(
+      db.from("task_activity").insert(
+        createdTaskIds.map((id) => ({
+          task_id: id,
+          user_id: auth.id,
+          action: "created",
+          details: "imported the task from Excel",
+        }))
+      )
+    ).catch((e) => console.error("[LightPM] failed to log task activity:", e));
   }
 
   return NextResponse.json({

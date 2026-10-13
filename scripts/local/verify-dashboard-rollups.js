@@ -1,9 +1,13 @@
 /**
- * Verifies the dashboard classification rollups (phase 6).
+ * Verifies the dashboard classification rollups (phase 6) and that the 14-day
+ * completion trend reads the activity log instead of its estimate fallback.
  *
- * The interesting assertion is the last one: renaming an option in Admin must
- * change the label the dashboard shows. That is what proves the rollup reads the
- * configurable list rather than a hard-coded set of names.
+ * The interesting assertions are the last two: renaming an option in Admin must
+ * change the label the dashboard shows (that is what proves the rollup reads
+ * the configurable list rather than a hard-coded set of names), and marking a
+ * task done must flip trendSource to "activity" (that is what proves the local
+ * store's gte()/like() filters work — without them the trend query throws and
+ * the catch silently serves the estimate).
  *
  * Counts are measured as deltas, because the dashboard totals every project.
  *
@@ -148,6 +152,33 @@ function labelFor(rows, key) {
   // Put it back so a re-run starts from the seed state.
   await call("PATCH", `/api/config/${crOption.id}`, { label: "CR" }, cookie);
   check("restored the original label", true);
+
+  /* ---------------- the 14-day trend reads activity, not the estimate ------ */
+
+  // Marking a task done writes a task_activity row ("changed status from
+  // ... to done"). With gte()/like() implemented in the local store that row
+  // must drive the trend: trendSource flips from the "updated" estimate to
+  // "activity". Before the fix the query threw and the catch swallowed it,
+  // silently reporting the estimate no matter what the log held.
+  const probe = await call("POST", "/api/tasks", { title: `Trend probe ${stamp}` }, cookie);
+  const probeId = probe.json?.task?.id;
+  check("created the trend probe task", probe.status === 200 && !!probeId, `status=${probe.status}`);
+
+  const marked = await call("PATCH", `/api/tasks/${probeId}`, { status: "done" }, cookie);
+  check("marked the probe task done", marked.status === 200, `status=${marked.status}`);
+
+  const trendDash = await call("GET", "/api/dashboard", undefined, cookie);
+  check(
+    "the 14-day trend is sourced from the activity log",
+    trendDash.json?.trendSource === "activity",
+    `trendSource=${trendDash.json?.trendSource}`
+  );
+  const trendSum = (trendDash.json?.trend ?? []).reduce((t, p) => t + (p.count ?? 0), 0);
+  check("the trend counts the completion", trendSum >= 1, `sum=${trendSum}`);
+
+  // Leave the store as we found it: deleting the task cascades its activity rows.
+  const removed = await call("DELETE", `/api/tasks/${probeId}`, undefined, cookie);
+  check("cleaned up the trend probe", removed.status === 200, `status=${removed.status}`);
 
   console.log("");
   if (failures > 0) {
